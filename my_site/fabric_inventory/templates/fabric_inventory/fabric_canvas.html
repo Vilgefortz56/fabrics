@@ -1,0 +1,112 @@
+{% extends "fabric_inventory/base.html"%}
+{% load static %}
+{% comment %} <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <title>Редактор чертежей с расчетом площади</title>
+    <!-- Подключение JS библиотек -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
+    <!-- Подключение CSS файла -->
+    <link rel="stylesheet" href="{% static 'fabric_inventory/css/canvas.css' %}">
+</head> {% endcomment %}
+
+{% block title%} Редактор чертежей с расчетом площади {% endblock%}
+
+{% block content %}
+     <!-- Полотно для рисования (увеличено) -->
+<!--  <canvas id="canvas" width="1200" height="800"></canvas>-->
+
+<!--  &lt;!&ndash; Контейнер для кнопок и вывода &ndash;&gt;-->
+<!--  <div id="controls">-->
+<!--    <label for="gridSize">Размер сетки:</label>-->
+<!--    <input type="range" id="gridSize" min="20" max="50" step="5" value="50">-->
+<!--    <span id="gridSizeLabel">50 px</span>-->
+<!--    <button id="selectTool" class="tool-button">Выделение</button>-->
+<!--    <button id="drawPolylineTool" class="tool-button">Рисование ломаной</button>-->
+<!--    <button id="calculateArea">Рассчитать площадь</button>-->
+<!--    <button id="saveData">Сохранить данные</button>-->
+<!--    <button id="addLineLabel">Добавить подпись</button>-->
+<!--    <div id="areaResult"></div>-->
+<!--  </div>-->
+
+<!-- Bootstrap Container -->
+<div class="container mt-4">
+
+  <!-- Canvas for Drawing -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <canvas id="canvas" width="1200" height="800" class="border"></canvas>
+    </div>
+  </div>
+
+  <!-- Controls Section -->
+  <div class="row">
+    <!-- Grid Size Control -->
+    <div class="col-md-3 mb-3">
+      <label for="gridSize" class="form-label">Размер сетки:</label>
+      <input type="range" class="form-range" id="gridSize" min="20" max="50" step="5" value="50">
+      <span id="gridSizeLabel" class="form-text">50 px</span>
+    </div>
+
+    <!-- Tool Buttons with Icons -->
+    <div class="col-md-9 mb-3">
+      <button id="selectTool" class="btn">
+        <i class="fas fa-mouse-pointer"></i> Выделение
+      </button>
+      <button id="drawPolylineTool" class="btn">
+        <i class="fas fa-draw-polygon"></i> Рисование ломаной
+      </button>
+      <button id="calculateArea" class="btn">
+        <i class="fas fa-calculator"></i> Рассчитать площадь
+      </button>
+      <button id="saveData" class="btn">
+        <i class="fas fa-save"></i> Сохранить данные
+      </button>
+      <button id="addLineLabel" class="btn">
+        <i class="fas fa-tag"></i> Добавить подпись
+      </button>
+    </div>
+  </div>
+</div>
+  <!-- Area Result Display -->
+  <div class="row">
+    <div class="col-12">
+      <div id="areaResult" class="alert alert-light" role="alert"></div>
+    </div>
+  </div>
+
+
+<!-- Подключение Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!--<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+
+<!-- Подключение JS файла -->
+<script src="{% static 'fabric_inventory/js/canvas.js' %}"></script>
+{% endblock%}
+<!-- <body>-->
+<!--  <h1>Добро пожаловать на мой сайт!</h1>-->
+<!--  &lt;!&ndash; Полотно для рисования (увеличено) &ndash;&gt;-->
+<!--  <canvas id="canvas" width="1200" height="800"></canvas>-->
+
+<!--  &lt;!&ndash; Контейнер для кнопок и вывода &ndash;&gt;-->
+<!--  <div id="controls">-->
+<!--    <label for="gridSize">Размер сетки:</label>-->
+<!--    <input type="range" id="gridSize" min="5" max="50" step="5" value="50">-->
+<!--    <span id="gridSizeLabel">50 px</span>-->
+<!--    <button id="selectTool" class="tool-button">Выделение</button>-->
+<!--    <button id="drawPolylineTool" class="tool-button">Рисование ломаной</button>-->
+<!--    <button id="calculateArea">Рассчитать площадь</button>-->
+<!--    <button id="saveData">Сохранить данные</button>-->
+<!--    <button id="addLineLabel">Добавить подпись</button>-->
+<!--    <div id="areaResult"></div>-->
+<!--  </div>-->
+<!--    -->
+<!--  &lt;!&ndash; Подключение JS файла &ndash;&gt;-->
+<!--  <script src="{% static 'fabric_inventory/js/canvas.js' %}"></script>-->
+<!--</body>-->
+<!--</html>-->

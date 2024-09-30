@@ -1,0 +1,101 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+canvas {
+    border: 1px solid #ccc;
+}
+#controls {
+    margin: 10px;
+}
+#areaResult {
+    margin: 10px;
+    font-size: 16px;
+}
+#gridSizeLabel {
+    margin-left: 10px;
+}
+.tool-button {
+    margin-right: 10px;
+}
+.active-button {
+    background-color: #007BFF;
+    color: #fff;
+}
+
+/* Custom styles for the toolbar */
+.toolbar {
+    background-color: #eaeaea;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+}
+.toolbar .btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 5px;
+    margin-right: 10px;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s;
+}
+.toolbar .btn:hover {
+    background-color: #f0f0f0;
+}
+.toolbar .btn i {
+    font-size: 18px;
+    color: #333;
+}
+.toolbar label, .toolbar span {
+    margin-right: 15px;
+}
+
+/* Custom slider styles
+.custom-slider-container {
+    display: flex;
+    align-items: center;
+    margin-right: 20px;
+}
+.custom-slider {
+    -webkit-appearance: none;
+    width: 150px;
+    height: 8px;
+    border-radius: 5px;
+    background: #ddd;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+    margin-right: 10px;
+}
+.custom-slider:hover {
+    opacity: 1;
+}
+.custom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.3s;
+}
+.custom-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.3s;
+}
+.custom-slider::-webkit-slider-thumb:hover {
+    background: #0056b3;
+}
+*/
