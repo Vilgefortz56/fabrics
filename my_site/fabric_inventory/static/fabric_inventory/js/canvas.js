@@ -18,7 +18,7 @@ canvas.on('object:added', function(e) {
 });
 
 // Настройка сетки
-let grid = 50; // Размер клетки сетки
+let grid = document.getElementById('gridSize').value;
 
 // Функция для рисования сетки
 function drawGrid() {
@@ -58,7 +58,7 @@ drawGrid();
 // Обработчик изменения размера сетки
 document.getElementById('gridSize').addEventListener('input', function() {
     grid = parseInt(this.value);
-    document.getElementById('gridSizeLabel').innerText = grid + ' px';
+    // document.getElementById('gridSizeLabel').innerText = grid + ' px';
     drawGrid();
 });
 
@@ -174,12 +174,19 @@ canvas.on('mouse:down', function(o){
             let polygon = result.polygon;
             let line = result.line;
 
-            if (line.labelAdded) {
-                alert("На эту линию уже добавлена подпись.");
+            // if (line.labelAdded) {
+            //     alert("На эту линию уже добавлена подпись.");
+            //     return; // Выход из функции, если подпись уже существует
+            // }
+
+            // line.labelAdded = true;
+            // console.log("Подпись добавлена на линию:", line.labelAdded);
+
+            if (linesWithLabels.some(l => l.index === line.index_line)) {
+                console.log("На эту линию уже добавлена подпись.");
                 return; // Выход из функции, если подпись уже существует
             }
 
-            line.labelAdded = true;
             // Вычисляем середину выбранной линии
             let midX = (line.point1.x + line.point2.x) / 2;
             let midY = (line.point1.y + line.point2.y) / 2;
@@ -317,27 +324,27 @@ function findPolygonAtClick(pointer) {
 
     // Перебираем все объекты на холсте
     for (let i = 0; i < objects.length; i++) {
-    if (objects[i] instanceof fabric.Polygon) {
-        let polygon = objects[i];
-        let points = polygon.points;
+        if (objects[i] instanceof fabric.Polygon) {
+            let polygon = objects[i];
+            let points = polygon.points;
 
-        // Перебираем все стороны полигона
-        for (let j = 0; j < points.length; j++) {
-        let point1 = points[j];
-        let point2 = points[(j + 1) % points.length];
+            // Перебираем все стороны полигона
+            for (let j = 0; j < points.length; j++) {
+                let point1 = points[j];
+                let point2 = points[(j + 1) % points.length];
 
-        // Вычисляем расстояние от точки клика до текущей линии полигона
-        let distance = distanceToLine(pointer, point1, point2);
+                // Вычисляем расстояние от точки клика до текущей линии полигона
+                let distance = distanceToLine(pointer, point1, point2);
 
-        // Если расстояние меньше текущего минимального и порогового значения
-        if (distance < minDistance && distance <= distanceThreshold) {
-            minDistance = distance;
-            closestLine = {index_line: j, point1: point1, point2: point2, labelAdded: false};
-            selectedPolygon = polygon;
-            break;
+                // Если расстояние меньше текущего минимального и порогового значения
+                if (distance < minDistance && distance <= distanceThreshold) {
+                    minDistance = distance;
+                    closestLine = {index_line: j, point1: point1, point2: point2, labelAdded: false};
+                    selectedPolygon = polygon;
+                    break;
+                }
+            }
         }
-        }
-    }
     }
 
     if (selectedPolygon) {
@@ -603,48 +610,146 @@ function computePolygonArea(vertices) {
 document.getElementById('calculateArea').addEventListener('click', calculateArea);
 
 // Функция для сохранения канваса как изображения
-function saveCanvasAsImage() {
-    // Получаем данные канваса
-    const dataURL = canvas.toDataURL({
-        format: 'png',
-        multiplier: 1 // Множитель для увеличения разрешения
-    });
+// function saveCanvasAsImage() {
+//     // Получаем данные канваса
+//     let dataURL = canvas.toDataURL({
+//         format: 'png',
+//         multiplier: 1 // Множитель для увеличения разрешения
+//     });
+//     // Удаление префикса 'data:image/png;base64,' перед отправкой
+//     dataURL = dataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
+//     console.log(dataURL);
+
+//     fetch('/upload-image', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json'
+//         },
+//         body: JSON.stringify({ image: dataURL })
+//       })
+//       .then(response => response.json())
+//       .then(data => console.log('Success:', data))
+//       .catch(error => console.error('Error:', error));
     
+// }
 
-    // Создаем новое изображение на основе данных
-    const img = new Image();
-    img.src = dataURL;
 
-    img.onload = function() {
-        // Создаем новый канвас для обрезки
-        const croppedCanvas = document.createElement('canvas');
-        const ctx = croppedCanvas.getContext('2d');
 
-        // Определяем размеры изображения
-        const imgWidth = img.width;
-        const imgHeight = img.height;
+function test() {
+    console.log('test');
+    let obj = canvas.getObjects('polygon');
+    console.log('left', obj.left, 'top', obj.top, 'width', obj.width, 'height', obj.height);
+    // const ll = obj.getBoundingRect(true);
+    // console.log(ll);
+}
+function saveCroppedImage() {
+    const allObjects = canvas.getObjects();
+    let padding = 50;
+    // Находим объект Polygon и все Textbox
+    // Находим объект Polygon и все Textbox
+    const polygon = allObjects.find(obj => obj.type === 'polygon');
+    const textboxes = allObjects.filter(obj => obj.type === 'textbox');
 
-        // Вычисляем координаты для центрирования
-        const cropX = (imgWidth - canvas.width) / 2;
-        const cropY = (imgHeight - canvas.height) / 2;
+    // Если Polygon не найден, выходим из функции
+    if (!polygon) {
+        console.warn('Polygon object not found on the canvas.');
+        return;
+    }
 
-        // Устанавливаем размеры нового канваса
-        croppedCanvas.width = canvas.width;
-        croppedCanvas.height = canvas.height;
+    // Функция для нахождения экстремальных координат (границ) объектов
+    function findBoundingBox(objects) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
-        // Обрезаем изображение и рисуем на новом канвасе
-        ctx.drawImage(img, cropX, cropY, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+        objects.forEach(obj => {
+            const bounds = obj.getBoundingRect();  // Получаем границы объекта
+            minX = Math.min(minX, bounds.left);
+            minY = Math.min(minY, bounds.top);
+            maxX = Math.max(maxX, bounds.left + bounds.width);
+            maxY = Math.max(maxY, bounds.top + bounds.height);
+        });
 
-        // Получаем обрезанное изображение в формате Data URL
-        const croppedDataURL = croppedCanvas.toDataURL('image/png');
+        return { minX, minY, maxX, maxY };
+    }
 
-        // Создаем ссылку для скачивания изображения
-        const link = document.createElement('a');
-        link.href = croppedDataURL;
-        link.download = 'image.png';
-        link.click();
-    };
+    // Определяем границы объекта Polygon и подписей
+    const boundingBox = findBoundingBox([polygon, ...textboxes]);
+
+    // Добавляем отступы
+    const croppedWidth = Math.max(boundingBox.maxX - boundingBox.minX + padding * 2, 0);
+    const croppedHeight = Math.max(boundingBox.maxY - boundingBox.minY + padding * 2, 0);
+
+    // Изменяем размер холста
+    canvas.setDimensions({
+        width: croppedWidth,
+        height: croppedHeight
+    });
+
+    // Сдвигаем все объекты так, чтобы они находились на новом холсте с отступами
+    canvas.forEachObject(obj => {
+        const bounds = obj.getBoundingRect(); // Получаем границы объекта для правильного смещения
+
+        // Перемещаем объект с учетом его текущих координат и границ
+        const newLeft = obj.left - boundingBox.minX + padding;
+        const newTop = obj.top - boundingBox.minY + padding;
+
+        // Обновляем координаты объекта
+        obj.set({
+            left: newLeft,
+            top: newTop
+        });
+
+        // Проверяем, если объект за пределами новой области
+        if (newLeft < -padding || newTop < -padding || newLeft + bounds.width > croppedWidth || newTop + bounds.height > croppedHeight) {
+            console.warn(`Textbox out of bounds: left=${newLeft}, top=${newTop}, width=${bounds.width}, height=${bounds.height}`);
+        }
+
+        // Для отладки: визуализируем границы
+        const debugRect = new fabric.Rect({
+            left: newLeft,
+            top: newTop,
+            width: bounds.width,
+            height: bounds.height,
+            fill: 'rgba(255, 0, 0, 0.2)',
+            stroke: 'red',
+            strokeWidth: 1,
+            selectable: false,
+            evented: false,
+            visible: true
+        });
+        canvas.add(debugRect);
+        console.log("объект", obj);
+    });
+    textboxes.forEach((textbox) => {
+        console.log(`Textbox visibility: ${textbox.visible}, left: ${textbox.left}, top: ${textbox.top}, text: ${textbox.text}`);
+    });
+
+    // Перерисовываем холст
+    canvas.renderAll();
+
+    // Экспортируем изображение как DataURL
+    const croppedImageURL = canvas.toDataURL({
+        format: 'png',
+        multiplier: 1,
+    });
+
+    // Отправка изображения на сервер
+    sendCroppedImageToServer(croppedImageURL);
+}
+
+function sendCroppedImageToServer(imageDataURL) {
+    // Пример отправки изображения на сервер
+    imageDataURL = imageDataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
+    fetch('/upload-image', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ image: imageDataURL })
+    })
+    .then(response => response.json())
+    .then(data => console.log('Success:', data))
+    .catch(error => console.error('Error:', error));
 }
 
 // Обработчик кнопки сохранения данных
-document.getElementById('saveData').addEventListener('click', saveCanvasAsImage);
+document.getElementById('saveData').addEventListener('click', saveCroppedImage);
