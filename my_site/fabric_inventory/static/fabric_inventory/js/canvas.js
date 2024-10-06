@@ -1,4 +1,5 @@
 console.log('Hello, world!');
+let current_area = 0;
 // Инициализация Canvas
 const canvas = new fabric.Canvas('canvas', {
     selection: true,
@@ -117,7 +118,7 @@ function simplifyPolyline(points) {
     if (points.length < 3) return points;  // Если меньше 3 точек, ничего не упрощаем
     
     let simplifiedPoints = [points[0]];  // Начинаем с первой точки
-    // let isClosed = points[0].x === points[points.length - 1].x && points[0].y === points[points.length - 1].y;
+//    Я же писал, что вторник и пятница у меня теперь отпадают, так как пары начались. // let isClosed = points[0].x === points[points.length - 1].x && points[0].y === points[points.length - 1].y;
 
     for (let i = 1; i < points.length - 1; i++) {
         let p1 = simplifiedPoints[simplifiedPoints.length - 1];  // Последняя добавленная точка
@@ -198,7 +199,7 @@ canvas.on('mouse:down', function(o){
             let label = new fabric.Textbox("Размер", {
                 left: midX,
                 top: midY,
-                fontSize: 20,
+                fontSize: 30,
                 fill: 'blue',
                 originX: 'center',
                 originY: 'center',
@@ -413,7 +414,7 @@ function finishDrawingPolyline() {
         stroke: 'blue',
         strokeWidth: 2,
         selectable: true,
-        evented: true,
+        evented: false,
         absolutePositioned: true,
         objectCaching: false,
         hasControls: false,
@@ -434,7 +435,7 @@ function finishDrawingPolyline() {
     canvas.setActiveObject(polygon);
 
     // Автоматически рассчитываем площадь
-    calculateArea();
+    current_area = calculateArea();
 
     polyline = null;
     polylinePoints = [];
@@ -547,7 +548,9 @@ function calculateArea() {
         let area = calculatePolygonAreaWithRealDimensions(vertices, realSideLengths);
         document.getElementById('areaResult').innerText = 'Площадь: ' + area.toFixed(2) + ' кв.м';
         console.log(area);
+        return area;
     }
+    return 0;
 }
 function calculatePolygonAreaWithRealDimensions(vertices, realSideLengths) {
     let pixelSideLengths = [];
@@ -684,8 +687,22 @@ function saveCroppedImage() {
         height: croppedHeight
     });
 
+    // Получаем все объекты с холста
+    const kek = canvas.getObjects();
+
+    // Фильтруем только объекты типа Polygon и Textbox
+    const polygonsAndTextboxes = kek.filter(obj =>
+        obj.type === 'polygon' || obj.type === 'textbox'
+    );
+
     // Сдвигаем все объекты так, чтобы они находились на новом холсте с отступами
-    canvas.forEachObject(obj => {
+//    canvas.forEachObject(obj => {
+    polygonsAndTextboxes.forEach(obj => {
+        let uu = polygonsAndTextboxes.filter(ii =>
+            ii.type === 'textbox'
+        );
+        console.log("Гыыы", uu);
+
         const bounds = obj.getBoundingRect(); // Получаем границы объекта для правильного смещения
 
         // Перемещаем объект с учетом его текущих координат и границ
@@ -736,7 +753,11 @@ function saveCroppedImage() {
     sendCroppedImageToServer(croppedImageURL);
 }
 
-function sendCroppedImageToServer(imageDataURL) {
+function sendCroppedImageToServer() {
+     let imageDataURL = canvas.toDataURL({
+         format: 'png',
+         multiplier: 1 // Множитель для увеличения разрешения
+     });
     // Пример отправки изображения на сервер
     imageDataURL = imageDataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
     fetch('/upload-image', {
@@ -744,7 +765,10 @@ function sendCroppedImageToServer(imageDataURL) {
     headers: {
         'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ image: imageDataURL })
+    body: JSON.stringify({ image: imageDataURL,
+                            area: current_area,
+                            status: 'available',
+                            })
     })
     .then(response => response.json())
     .then(data => console.log('Success:', data))
@@ -752,4 +776,4 @@ function sendCroppedImageToServer(imageDataURL) {
 }
 
 // Обработчик кнопки сохранения данных
-document.getElementById('saveData').addEventListener('click', saveCroppedImage);
+document.getElementById('saveData').addEventListener('click', sendCroppedImageToServer);

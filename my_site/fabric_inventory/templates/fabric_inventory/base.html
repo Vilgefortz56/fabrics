@@ -18,25 +18,30 @@
     
 </head>
 <body>
-    <!-- Общий хедер (например, меню) -->
-    <header class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">MySite</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary rounded">
+          <div class="container">
+            <img src="/static/fabric_inventory/images/logo_mir_remney.jpg" alt="Logo" width="50" height="50" class="d-inline-block align-text-top me-2">
+            <a class="navbar-brand" href="#">Мир ремней</a>
+<!--            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">-->
+<!--              <span class="navbar-toggler-icon"></span>-->
+<!--            </button>-->
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/">Главная</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/about">О нас</a>
-                    </li>
-                </ul>
+              <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                  <a class="nav-link active" aria-current="page" href="#">Все ткани</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#">Добавить ткань</a>
+                </li>
+              </ul>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/login">Войти</a>
+                </li>
+            </ul>
             </div>
-        </div>
-    </header>
+          </div>
+    </nav>
 
     <!-- Основное содержимое -->
     <main class="container mt-5">

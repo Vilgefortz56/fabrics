@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'fabric_inventory',
 ]
 
+AUTH_USER_MODEL = 'fabric_inventory.CustomUser'
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

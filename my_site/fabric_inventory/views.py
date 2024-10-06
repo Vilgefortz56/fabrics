@@ -1,8 +1,11 @@
 import json
+from datetime import datetime
+
+from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from .models import Fabric
+from .models import Fabric, user_directory_path
 from django.views.decorators.csrf import csrf_exempt
 import base64
 import os
@@ -14,6 +17,9 @@ from django.conf import settings
 
 def index(request):
     return render(request, 'fabric_inventory/fabric_canvas.html')
+
+def login(request):
+    return render(request, 'fabric_inventory/login.html')
 
 @csrf_exempt
 def upload_image(request):
@@ -40,3 +46,31 @@ def upload_image(request):
             except Exception as e:
                 return JsonResponse({'status': 'error', 'message': str(e)})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@csrf_exempt
+def upload_fabric_image(request):
+    user = request.user
+    print(user)
+    body_unicode = request.body.decode('utf-8')
+    body_data = json.loads(body_unicode)
+
+    # Получаем заголовок, изображение и другие данные из запроса
+    image_base64 = body_data.get('image')  # Здесь передается base64 изображение
+    area = body_data.get('area')
+    status = body_data.get('status')
+    print(area, status)
+    if image_base64:
+        title = f'image_user_{user.username}_{datetime.now().strftime("%Y-%m-%d")}'
+        image_data = base64.b64decode(image_base64)
+        file_path = os.path.join(settings.MEDIA_ROOT, f'image.png')
+        fabric = Fabric(
+            title=title,
+            user=user,
+            area=area,
+            status=status,
+        )
+        fabric.image.save(f"{title}.png", ContentFile(image_data), save=True)
+
+    return JsonResponse({'success': 'Изображение успешно загружено'})
+
