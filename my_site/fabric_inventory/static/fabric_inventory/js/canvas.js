@@ -753,17 +753,35 @@ function saveCroppedImage() {
     sendCroppedImageToServer(croppedImageURL);
 }
 
+// Получение CSRF-токена из cookie
+function getCSRFToken() {
+    let cookieValue = null;
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        // Проверяем наличие "csrftoken" в cookie
+        if (cookie.substring(0, 10) === 'csrftoken=') {
+        cookieValue = decodeURIComponent(cookie.substring(10));
+        break;
+        }
+    }
+    return cookieValue;
+}
+
 function sendCroppedImageToServer() {
      let imageDataURL = canvas.toDataURL({
          format: 'png',
          multiplier: 1 // Множитель для увеличения разрешения
      });
+     // Получаем CSRF-токен
+    const csrftoken = getCSRFToken();
     // Пример отправки изображения на сервер
     imageDataURL = imageDataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
     fetch('/upload-image', {
     method: 'POST',
     headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken
     },
     body: JSON.stringify({ image: imageDataURL,
                             area: current_area,
@@ -771,7 +789,15 @@ function sendCroppedImageToServer() {
                             })
     })
     .then(response => response.json())
-    .then(data => console.log('Success:', data))
+    .then(data => {
+        if (data.redirect_url) {
+            // Если сервер вернул URL для редиректа, выполняем переход
+            window.location.href = data.redirect_url;
+        } else if (data.error) {
+            // Обработка ошибок, если есть
+            console.error(data.error);
+        }
+        console.log('Success:', data)})
     .catch(error => console.error('Error:', error));
 }
 
