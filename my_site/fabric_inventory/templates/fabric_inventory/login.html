@@ -37,6 +37,11 @@
                                 <label class="form-check-label" for="rememberMe">Запомнить меня</label>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Вход</button>
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger" role="alert">
+                                    {{ form.non_field_errors }}
+                                </div>
+                            {% endif %}
                         </form>
                     </div>
                 </div>

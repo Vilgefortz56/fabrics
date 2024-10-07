@@ -1,6 +1,8 @@
 import json
 from datetime import datetime
 
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.views import LoginView
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django.http import JsonResponse
@@ -21,7 +23,16 @@ def index(request):
     return render(request, 'fabric_inventory/fabric_canvas.html')
 
 def login(request):
+    print('Долбоёб')
     return render(request, 'fabric_inventory/login.html')
+
+class LoginUser(LoginView):
+    form_class = AuthenticationForm
+    template_name = 'fabric_inventory/login.html'
+    extra_context = {'title': "Авторизация"}
+
+
+
 
 @csrf_exempt
 def upload_image(request):

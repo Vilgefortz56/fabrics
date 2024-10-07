@@ -35,9 +35,22 @@
                 </li>
               </ul>
             <ul class="navbar-nav">
+              {% if user.is_authenticated %}
                 <li class="nav-item">
-                    <a class="nav-link" href="/login">Войти</a>
+                  <a class="nav-link" href="#">{{ user.username }}</a>
                 </li>
+                <li class="nav-item">
+                  <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Выход</button>
+                  </form>
+                  {% comment %} <a class="nav-link" href="{% url 'logout' %}">Выйти</a> {% endcomment %}
+                </li>
+              {% else %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'login' %}">Войти</a>
+                </li>
+              {% endif %}
             </ul>
             </div>
           </div>
