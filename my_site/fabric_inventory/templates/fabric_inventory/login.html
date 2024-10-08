@@ -38,8 +38,8 @@
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Вход</button>
                             {% if form.non_field_errors %}
-                                <div class="alert alert-danger" role="alert">
-                                    {{ form.non_field_errors }}
+                                <div class="alert alert-danger mt-3 mb-0" role="alert">
+                                     Беда произошла. Неверный логин или пароль.
                                 </div>
                             {% endif %}
                         </form>
