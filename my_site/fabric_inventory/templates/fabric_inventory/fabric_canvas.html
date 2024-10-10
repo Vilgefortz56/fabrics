@@ -1,83 +1,46 @@
 {% extends "fabric_inventory/base.html"%}
 {% load static %}
-{% comment %} <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-
-    <title>Редактор чертежей с расчетом площади</title>
-    <!-- Подключение JS библиотек -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"></script>
-    <!-- Подключение CSS файла -->
-    <link rel="stylesheet" href="{% static 'fabric_inventory/css/canvas.css' %}">
-</head> {% endcomment %}
 
 {% block title%} Редактор чертежей с расчетом площади {% endblock%}
 
+
 {% block content %}
-     <!-- Полотно для рисования (увеличено) -->
-<!--  <canvas id="canvas" width="1200" height="800"></canvas>-->
-
-<!--  &lt;!&ndash; Контейнер для кнопок и вывода &ndash;&gt;-->
-<!--  <div id="controls">-->
-<!--    <label for="gridSize">Размер сетки:</label>-->
-<!--    <input type="range" id="gridSize" min="20" max="50" step="5" value="50">-->
-<!--    <span id="gridSizeLabel">50 px</span>-->
-<!--    <button id="selectTool" class="tool-button">Выделение</button>-->
-<!--    <button id="drawPolylineTool" class="tool-button">Рисование ломаной</button>-->
-<!--    <button id="calculateArea">Рассчитать площадь</button>-->
-<!--    <button id="saveData">Сохранить данные</button>-->
-<!--    <button id="addLineLabel">Добавить подпись</button>-->
-<!--    <div id="areaResult"></div>-->
-<!--  </div>-->
-
-<!-- Bootstrap Container -->
-{% comment %} <div class="container mt-4">
-
-  <!-- Canvas for Drawing -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <canvas id="canvas" width="500" height="700" class="border"></canvas>
+  <!-- Модальное окно с сохранением результатов -->
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="exampleModalLabel">Уведомление</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Вы уверены, что хотите сохранить изображение?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Закрыть</button>
+          <button type="button" class="btn btn-secondary" id='confirmAction'>Сохранить</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Controls Section -->
-  <div class="row">
-    <!-- Grid Size Control -->
-    <div class="col-md-3 mb-3">
-      <label for="gridSize" class="form-label">Размер сетки:</label>
-      <input type="range" class="form-range" id="gridSize" min="20" max="50" step="5" value="50">
-      <span id="gridSizeLabel" class="form-text">50 px</span>
-    </div>
-
-    <!-- Tool Buttons with Icons -->
-    <div class="col-md-9 mb-3">
-      <button id="selectTool" class="btn">
-        <i class="fas fa-mouse-pointer"></i> Выделение
-      </button>
-      <button id="drawPolylineTool" class="btn">
-        <i class="fas fa-draw-polygon"></i> Рисование ломаной
-      </button>
-      <button id="calculateArea" class="btn">
-        <i class="fas fa-calculator"></i> Рассчитать площадь
-      </button>
-      <button id="saveData" class="btn">
-        <i class="fas fa-save"></i> Сохранить данные
-      </button>
-      <button id="addLineLabel" class="btn">
-        <i class="fas fa-tag"></i> Добавить подпись
-      </button>
+  <!-- Bootstrap Modal для предупреждения -->
+  <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="warningModalLabel">Внимание!</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body">
+          Размеры заданы некорректно (исключите буквы и символы из названий или укажите размеры для каждой стороны).
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ОК</button>
+        </div>
+      </div>
     </div>
   </div>
-</div>
-  <!-- Area Result Display -->
-  <div class="row">
-    <div class="col-12">
-      <div id="areaResult" class="alert alert-light" role="alert"></div>
-    </div>
-  </div> {% endcomment %}
 
   <div class="toolbar d-flex justify-content-start mb-3">
     <button id="selectTool" class="btn">
@@ -106,7 +69,7 @@
       <label for="areaRes" id="areaResult" class="form-label mb-2">Площадь:</label>
     </div>
   </div>
-<canvas id="canvas" width="1300" height="750" class="border"></canvas>
+<canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
 
 
 <!-- Подключение Bootstrap JS -->

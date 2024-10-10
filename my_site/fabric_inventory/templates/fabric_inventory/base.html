@@ -18,37 +18,40 @@
     
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg bg-body-tertiary rounded">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" data-bs-theme="dark">
           <div class="container">
             <img src="/static/fabric_inventory/images/logo_mir_remney.jpg" alt="Logo" width="50" height="50" class="d-inline-block align-text-top me-2">
-            <a class="navbar-brand" href="#">Мир ремней</a>
+            <a class="navbar-brand" href="{% url 'home'%}">Мир ремней</a>
 <!--            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">-->
 <!--              <span class="navbar-toggler-icon"></span>-->
 <!--            </button>-->
-            <div class="collapse navbar-collapse" id="navbarNav">
-              <ul class="navbar-nav me-auto">
+            <div class="collapse navbar-collapse" id="navbarColor01">
+              <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                  <a class="nav-link active" aria-current="page" href="#">Все ткани</a>
+                  <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home'%}">Все ткани</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="#">Добавить ткань</a>
+                  <a class="nav-link {% if request.resolver_match.url_name == 'add_fabric' %}active{% endif %}" href="{% url 'add_fabric' %}">Добавить ткань</a>
                 </li>
               </ul>
-            <ul class="navbar-nav">
+            <ul class="navbar-nav mt-0 mb-lg-0">
               {% if user.is_authenticated %}
-                <li class="nav-item">
+                <li class="nav-item mt-1">
                   <a class="nav-link" href="#">{{ user.username }}</a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item mt-1">
                   <form method="post" action="{% url 'logout' %}">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-primary">Выход</button>
+                    <button type="submit" class="btn btn-secondary">Выход</button>
                   </form>
                   {% comment %} <a class="nav-link" href="{% url 'logout' %}">Выйти</a> {% endcomment %}
                 </li>
               {% else %}
-                <li class="nav-item">
-                  <a class="nav-link" href="{% url 'login' %}">Войти</a>
+                <li class="nav-item mt-1">
+                  <form method="post" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary">Войти</button>
+                  </form>
                 </li>
               {% endif %}
             </ul>
@@ -57,7 +60,7 @@
     </nav>
 
     <!-- Основное содержимое -->
-    <main class="container mt-5">
+    <main class="container mt-3">
         {% block content %}  <!-- Блок для индивидуального содержимого страниц -->
         {% endblock %}
     </main>

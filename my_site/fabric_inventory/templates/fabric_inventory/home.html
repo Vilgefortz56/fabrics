@@ -1,0 +1,61 @@
+{% extends "fabric_inventory/base.html"%}
+{% load static %}
+{% block title %} {{fabrics.title}} {% endblock %}
+{% block content %}
+    <div class="container my-4">
+        <!-- Фильтры -->
+        <div class="row mb-4">
+            <div class="col">
+                <form method="get" action="">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <select name="availability" class="form-select">
+                                <option value="">Все статусы</option>
+                                <option value="available">Доступные</option>
+                                <option value="unavailable">Недоступные</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="text" name="added_by" class="form-control" placeholder="Добавлено">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-secondary">Фильтр</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Карточки с тканями -->
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            {% for fabric in fabrics %}
+            <div class="col">
+            <div class="card border-secondary mb-0" style="max-width: 100%;">
+                <img src="{{ fabric.image.url }}" class="card-img-top border border-secondary-subtle" alt="{{ fabric.user.username}}">
+                <div class="card-body">
+                  <h5 class="card-title">Ткань </h5>
+                  {% comment %} <p class="card-text">{{ MEADIA_URL }}{{ fabric.image.url }}</p> {% endcomment %}
+                  <p class="card-text">Добавлено: {{ fabric.user.username }}</p>
+                  <p class="card-text">Площадь: {{ fabric.area }}</p>
+                  <p class="card-text">Статус: {% if fabric.status == 'available' %}В наличии{% else %}Использована{% endif %}</p>
+                  <p class="card-text"><small class="text-body-secondary">Последнее изменение: {{fabric.date_updated}} </small></p>
+                </div>
+              </div>
+            </div>
+            {% comment %} <div class="col">
+                <div class="card h-100">
+                    <img src="{{ fabric.image_url }}" class="card-img-top" alt="{{ fabric.user.username}}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ fabric.title }}</h5>
+                        <p class="card-text">Добавлено: {{ fabric.user.username }}</p>
+                        <p class="card-text">Площадь: {{ fabric.area }}</p>
+                        <p class="card-text">Статус: {% if fabric.is_available %}Available{% else %}Unavailable{% endif %}</p>
+                    </div>
+                </div>
+            </div> {% endcomment %}
+            {% endfor %}
+        </div>
+    </div>
+
+{% endblock%}
+

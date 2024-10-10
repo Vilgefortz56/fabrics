@@ -22,10 +22,7 @@ canvas {
 .tool-button {
     margin-right: 10px;
 }
-.active-button {
-    background-color: #007BFF;
-    color: #fff;
-}
+
 #gridSize {
     -webkit-appearance: none; /* Убираем стандартный стиль */
     width: 100%;
@@ -85,6 +82,11 @@ canvas {
 }
 .toolbar label, .toolbar span {
     margin-right: 15px;
+}
+
+.active-button {
+    background-color: #007BFF;
+    /* color: #fff; */
 }
 
 #input_grid {

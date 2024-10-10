@@ -27,7 +27,6 @@ class Fabric(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.SET_DEFAULT, default='Anonymous')
     title = models.CharField(max_length=100, blank=True, null=True)
     image = models.ImageField(upload_to=user_directory_path, height_field=None, width_field=None, max_length=None)
-    # image_path = models.CharField(blank=True, max_length=255, unique=True)
     area = models.FloatField()
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
@@ -38,3 +37,8 @@ class Fabric(models.Model):
 
     def __str__(self):
         return self.title
+    
+    class Meta:
+        ordering = ['-date_added']
+        verbose_name = 'Ткань'
+        verbose_name_plural = 'Ткани'

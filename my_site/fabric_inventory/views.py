@@ -1,8 +1,10 @@
 import json
 from datetime import datetime
+from typing import Any
 
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.views import LoginView
+from django.views.generic import ListView
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django.http import JsonResponse
@@ -19,48 +21,32 @@ from django.conf import settings
 # def index(request):
     # return render(request, 'fabric_inventory/fabric_canvas.html')
 
-def index(request):
+@login_required
+def add_fabric_page(request):
     return render(request, 'fabric_inventory/fabric_canvas.html')
 
 def login(request):
-    print('Долбоёб')
     return render(request, 'fabric_inventory/login.html')
+
+def home_page(request):
+
+    return render(request, 'fabric_inventory/home.html')
+
+
+class FabricsHome(ListView):
+    model = Fabric
+    template_name = 'fabric_inventory/home.html'
+    context_object_name = 'fabrics'
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Список тканей'
+        return context
 
 class LoginUser(LoginView):
     form_class = AuthenticationForm
     template_name = 'fabric_inventory/login.html'
     extra_context = {'title': "Авторизация"}
-
-
-
-
-@csrf_exempt
-def upload_image(request):
-    print(request)
-    if request.method == 'POST':
-            try:
-                # Чтение тела запроса
-                body_unicode = request.body.decode('utf-8')
-                body_data = json.loads(body_unicode)
-                data = body_data.get('image')
-
-                if data:
-                    # format, imgstr = data.split(';base64,') 
-                    # ext = format.split('/')[-1] 
-                    image_data = base64.b64decode(data)
-                    file_path = os.path.join(settings.MEDIA_ROOT, f'image.png')
-                    
-                    with open(file_path, 'wb') as f:
-                        f.write(image_data)
-
-                    return JsonResponse({'status': 'success', 'message': 'Image saved successfully'})
-                else:
-                    return JsonResponse({'status': 'error', 'message': 'No image data found'})
-            except Exception as e:
-                return JsonResponse({'status': 'error', 'message': str(e)})
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
-
-
 
 
 @csrf_exempt
@@ -85,18 +71,15 @@ def upload_fabric_image(request):
             )
             fabric.image.save(f"{title}.png", ContentFile(image_data), save=True)
 
-            return JsonResponse({'success': 'Изображение успешно загружено'})
+            return JsonResponse({'success': 'Изображение успешно загружено',
+                                 'redirect_url': reverse('home')})
         else:
             return JsonResponse({'error': 'Что-то пошло не так. Изображение не было загружено'})
     else:
-        print('Редирект')
-        # return redirect('login')
         return JsonResponse({'error': 'Пользователь не авторизован.',
                              'redirect_url': reverse('login')})
         
 
 
-    # user = request.user
-    # print(user)
    
 

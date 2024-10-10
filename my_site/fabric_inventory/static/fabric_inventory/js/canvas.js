@@ -548,6 +548,7 @@ function calculateArea() {
         let area = calculatePolygonAreaWithRealDimensions(vertices, realSideLengths);
         document.getElementById('areaResult').innerText = 'Площадь: ' + area.toFixed(2) + ' кв.м';
         console.log(area);
+        current_area = area;
         return area;
     }
     return 0;
@@ -768,12 +769,29 @@ function getCSRFToken() {
     return cookieValue;
 }
 
+
+const confirmActionButton = document.getElementById('confirmAction');
+const confirmationModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+
+// Если пользователь подтверждает действие, выполняем отправку данных
+confirmActionButton.addEventListener('click', function() {
+    confirmationModal.hide(); // Закрываем модальное окно
+    sendCroppedImageToServer(); // Ваша функция отправки данных
+});
+
 function sendCroppedImageToServer() {
+    current_area = calculateArea();
+    if (!current_area){
+        warningModal.show();
+        return;
+    }
      let imageDataURL = canvas.toDataURL({
          format: 'png',
          multiplier: 1 // Множитель для увеличения разрешения
      });
-     // Получаем CSRF-токен
+        
+    // Получаем CSRF-токен
     const csrftoken = getCSRFToken();
     // Пример отправки изображения на сервер
     imageDataURL = imageDataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
@@ -802,4 +820,6 @@ function sendCroppedImageToServer() {
 }
 
 // Обработчик кнопки сохранения данных
-document.getElementById('saveData').addEventListener('click', sendCroppedImageToServer);
+document.getElementById('saveData').addEventListener('click', function() {
+    confirmationModal.show();
+});
