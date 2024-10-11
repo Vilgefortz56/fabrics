@@ -26,11 +26,13 @@
                             {% csrf_token %}
                             <div class="mb-3">
                                 <label for="username" class="form-label">Имя пользователя</label>
-                                <input type="text" name="username" class="form-control" id="username" placeholder="Введите ваше имя пользователя" required>
+                                {% comment %} <input type="text" name="username" class="form-control" id="username" placeholder="Введите ваше имя пользователя" required> {% endcomment %}
+                                {{ form.username }}
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">Пароль</label>
-                                <input type="password" name="password" class="form-control" id="password" placeholder="Введите ваш пароль" required>
+                                {% comment %} <input type="password" name="password" class="form-control" id="password" placeholder="Введите ваш пароль" required> {% endcomment %}
+                                {{ form.password }}
                             </div>
                             <div class="mb-3 form-check">
                                 <input type="checkbox" class="form-check-input" id="rememberMe" name="remember_me">

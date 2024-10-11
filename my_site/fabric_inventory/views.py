@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from typing import Any
 
-from django.contrib.auth.forms import AuthenticationForm
+
 from django.contrib.auth.views import LoginView
 from django.views.generic import ListView
 from django.contrib.auth.models import AnonymousUser
@@ -11,6 +11,8 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+
+from .forms import CustomLoginForm
 from .models import Fabric, user_directory_path
 from django.views.decorators.csrf import csrf_exempt
 import base64
@@ -37,14 +39,18 @@ class FabricsHome(ListView):
     model = Fabric
     template_name = 'fabric_inventory/home.html'
     context_object_name = 'fabrics'
+    paginate_by = 6
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
+        per_page = self.request.GET.get('per_page', 25)
+        self.paginate_by = per_page
         context['title'] = 'Список тканей'
+        context['per_page'] = per_page
         return context
 
 class LoginUser(LoginView):
-    form_class = AuthenticationForm
+    form_class = CustomLoginForm
     template_name = 'fabric_inventory/login.html'
     extra_context = {'title': "Авторизация"}
 
@@ -66,7 +72,7 @@ def upload_fabric_image(request):
             fabric = Fabric(
                 title=title,
                 user=user,
-                area=area,
+                area=round(area, 2),
                 status=status,
             )
             fabric.image.save(f"{title}.png", ContentFile(image_data), save=True)
