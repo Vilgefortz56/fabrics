@@ -65,8 +65,18 @@
       {% comment %} <label for="areaRes" id="areaResult" class="form-label ms-3 mb-2">Площадь:</label> {% endcomment %}
       {% comment %} <span id="gridSizeLabel" class="ms-2">50 px</span> {% endcomment %}
     </div>
-    <div class="d-flex align-items-center me-3 mb-0" style="white-space: nowrap;" id="area">
-      <label for="areaRes" id="areaResult" class="form-label mb-2">Площадь:</label>
+    <div class="d-flex align-items-center mb-0" style="white-space: nowrap;" id="area">
+      <label class="form-label mb-0">Площадь:</label>
+      <input type="text" class="form-control w-50" id="inputArea" placeholder="Площадь">
+      <label class="form-label mb-0 ms-2">кв. м.</label>
+    </div>
+    <div class="d-flex align-items-center mb-0 ms-0" style="white-space: nowrap;" id="area">
+      <label class="form-label mb-0">Тип материала:</label>
+      <select class="form-select" id="categorySelect" name="category">
+        {% for type in fabric_types %}
+            <option value="{{ type.id }}">{{ type.name }}</option>
+        {% endfor %}
+      </select> 
     </div>
   </div>
 <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>

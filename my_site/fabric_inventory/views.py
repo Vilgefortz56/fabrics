@@ -13,7 +13,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 
 from .forms import CustomLoginForm
-from .models import Fabric, user_directory_path
+from .models import Fabric, FabricType
 from django.views.decorators.csrf import csrf_exempt
 import base64
 import os
@@ -25,7 +25,8 @@ from django.conf import settings
 
 @login_required
 def add_fabric_page(request):
-    return render(request, 'fabric_inventory/fabric_canvas.html')
+    fabric_types = FabricType.objects.all()
+    return render(request, 'fabric_inventory/fabric_canvas.html', {'fabric_types': fabric_types})
 
 def login(request):
     return render(request, 'fabric_inventory/login.html')
@@ -39,12 +40,18 @@ class FabricsHome(ListView):
     model = Fabric
     template_name = 'fabric_inventory/home.html'
     context_object_name = 'fabrics'
-    paginate_by = 6
+    # paginate_by = 6
+
+    def get_paginate_by(self, queryset):
+        # Получаем значение параметра per_page из запроса
+        per_page = self.request.GET.get('per_page', 6)  # Значение по умолчанию 6
+        return int(per_page)  # Преобразуем в int
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        per_page = self.request.GET.get('per_page', 25)
-        self.paginate_by = per_page
+        per_page = self.request.GET.get('per_page')
+        obj = len(Fabric.objects.all())
+        print(per_page, obj)
         context['title'] = 'Список тканей'
         context['per_page'] = per_page
         return context
@@ -66,6 +73,8 @@ def upload_fabric_image(request):
         image_base64 = body_data.get('image')  # Здесь передается base64 изображение
         area = body_data.get('area')
         status = body_data.get('status')
+        fabrictype_id = int(body_data.get('fabrictype_id'))
+        fabrictype_instance = FabricType.objects.get(pk=fabrictype_id)
         if image_base64:
             title = f'image_user_{user.username}_{datetime.now().strftime("%Y-%m-%d")}'
             image_data = base64.b64decode(image_base64)
@@ -74,6 +83,7 @@ def upload_fabric_image(request):
                 user=user,
                 area=round(area, 2),
                 status=status,
+                fabric_type = fabrictype_instance,
             )
             fabric.image.save(f"{title}.png", ContentFile(image_data), save=True)
 

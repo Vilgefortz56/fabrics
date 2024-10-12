@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Fabric, CustomUser
+from .models import Fabric, CustomUser, FabricType
 
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
@@ -33,10 +33,13 @@ class CustomUserAdmin(UserAdmin):
 # class CustomUserAdmin(admin.ModelAdmin):
 #     list_display = ('username', 'role')
 
+class FabricTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', )
 
 class FabricAdmin(admin.ModelAdmin):
     list_display = ('title', 'area', 'user', 'status')
 
 
+admin.site.register(FabricType, FabricTypeAdmin)
 admin.site.register(Fabric, FabricAdmin)
 admin.site.register(CustomUser, CustomUserAdmin)

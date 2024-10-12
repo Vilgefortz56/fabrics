@@ -1,5 +1,10 @@
 console.log('Hello, world!');
+const inputArea = document.getElementById('inputArea');
 let current_area = 0;
+
+window.onload = function() {
+    document.getElementById('inputArea').value = '';  // Очищаем поле при загрузке
+  };
 // Инициализация Canvas
 const canvas = new fabric.Canvas('canvas', {
     selection: true,
@@ -520,7 +525,7 @@ document.addEventListener('keydown', function(e) {
         polylinePoints = [];
         linesWithLabels = [];
         // Очищаем площадь, если удалили выделенный объект
-        document.getElementById('areaResult').innerText = '';
+        // document.getElementById('areaResult').innerText = '';
     }
     };
     if (e.key === 'Enter') {
@@ -545,8 +550,9 @@ function calculateArea() {
         let vertices = linesWithLabels.map(line => line.point1);
         console.log(realSideLengths);
         console.log(vertices);
-        let area = calculatePolygonAreaWithRealDimensions(vertices, realSideLengths);
-        document.getElementById('areaResult').innerText = 'Площадь: ' + area.toFixed(2) + ' кв.м';
+        let area = calculatePolygonAreaWithRealDimensions(vertices, realSideLengths).toFixed(2);
+        // document.getElementById('areaResult').innerText = 'Площадь: ' + area.toFixed(2) + ' кв.м';
+        inputArea.value = area;
         console.log(area);
         current_area = area;
         return area;
@@ -790,7 +796,7 @@ function sendCroppedImageToServer() {
          format: 'png',
          multiplier: 1 // Множитель для увеличения разрешения
      });
-        
+    const selectElement = document.getElementById('categorySelect');
     // Получаем CSRF-токен
     const csrftoken = getCSRFToken();
     // Пример отправки изображения на сервер
@@ -802,8 +808,9 @@ function sendCroppedImageToServer() {
         'X-CSRFToken': csrftoken
     },
     body: JSON.stringify({ image: imageDataURL,
-                            area: current_area,
+                            area: parseFloat(inputArea.value),
                             status: 'available',
+                            fabrictype_id: parseInt(selectElement.value),
                             })
     })
     .then(response => response.json())

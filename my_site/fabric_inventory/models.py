@@ -19,6 +19,18 @@ class CustomUser(AbstractUser):
         return self.username
 
 
+class FabricType(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = 'Тип ткани'
+        verbose_name_plural = 'Типы тканей'
+
+
+
 def user_directory_path(instance: CustomUser, filename):
     # Путь будет вида: "user_<id>/YYYY-MM-DD/filename"
     return f'user_{instance.user.username}/{datetime.now().strftime("%Y-%m-%d")}/{filename}'
@@ -28,6 +40,7 @@ class Fabric(models.Model):
     title = models.CharField(max_length=100, blank=True, null=True)
     image = models.ImageField(upload_to=user_directory_path, height_field=None, width_field=None, max_length=None)
     area = models.FloatField()
+    fabric_type = models.ForeignKey(FabricType, on_delete=models.CASCADE, default=None)
     date_added = models.DateTimeField(auto_now_add=True)
     date_updated = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=20, choices=[
