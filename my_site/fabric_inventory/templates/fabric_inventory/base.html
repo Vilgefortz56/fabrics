@@ -22,9 +22,6 @@
           <div class="container">
             <img src="/static/fabric_inventory/images/logo_mir_remney.jpg" alt="Logo" width="50" height="50" class="d-inline-block align-text-top me-2">
             <a class="navbar-brand" href="{% url 'home'%}">Мир ремней</a>
-<!--            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">-->
-<!--              <span class="navbar-toggler-icon"></span>-->
-<!--            </button>-->
             <div class="collapse navbar-collapse" id="navbarColor01">
               <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
@@ -33,10 +30,12 @@
                 <li class="nav-item">
                   <a class="nav-link {% if request.resolver_match.url_name == 'add_fabric' %}active{% endif %}" href="{% url 'add_fabric' %}">Добавить ткань</a>
                 </li>
-                {% if request.user.is_authenticated and request.user.is_superuser %}
+                {% if request.user.is_authenticated %}
+                  {% if request.user.is_superuser or request.user.role == 'admin' %}
                   <li class="nav-item">
                     <a class="nav-link" href="{% url 'admin:index' %}">Панель администратора</a>
                   </li>
+                  {% endif %}
                 {% endif %}
               </ul>
             <ul class="navbar-nav mt-0 mb-lg-0">
@@ -49,7 +48,6 @@
                     {% csrf_token %}
                     <button type="submit" class="btn btn-secondary">Выход</button>
                   </form>
-                  {% comment %} <a class="nav-link" href="{% url 'logout' %}">Выйти</a> {% endcomment %}
                 </li>
               {% else %}
                 <li class="nav-item mt-1">
@@ -67,11 +65,6 @@
     <!-- Основное содержимое -->
         {% block content %}  <!-- Блок для индивидуального содержимого страниц -->
         {% endblock %}
-
-    <!-- Общий футер -->
-    {% comment %} <footer class="bg-dark text-white text-center py-3 mt-5">
-        <p>&copy; 2024 MySite. Все права защищены.</p>
-    </footer> {% endcomment %}
     
 </body>
 </html>
