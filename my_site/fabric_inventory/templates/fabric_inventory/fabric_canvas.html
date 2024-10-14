@@ -5,6 +5,7 @@
 
 
 {% block content %}
+<main class='container mt-2'>
   <!-- Модальное окно с сохранением результатов -->
   <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -80,7 +81,7 @@
     </div>
   </div>
 <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
-
+</main>
 
 <!-- Подключение Bootstrap JS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -90,25 +91,3 @@
 <!-- Подключение JS файла -->
 <script src="{% static 'fabric_inventory/js/canvas.js' %}"></script>
 {% endblock%}
-<!-- <body>-->
-<!--  <h1>Добро пожаловать на мой сайт!</h1>-->
-<!--  &lt;!&ndash; Полотно для рисования (увеличено) &ndash;&gt;-->
-<!--  <canvas id="canvas" width="1200" height="800"></canvas>-->
-
-<!--  &lt;!&ndash; Контейнер для кнопок и вывода &ndash;&gt;-->
-<!--  <div id="controls">-->
-<!--    <label for="gridSize">Размер сетки:</label>-->
-<!--    <input type="range" id="gridSize" min="5" max="50" step="5" value="50">-->
-<!--    <span id="gridSizeLabel">50 px</span>-->
-<!--    <button id="selectTool" class="tool-button">Выделение</button>-->
-<!--    <button id="drawPolylineTool" class="tool-button">Рисование ломаной</button>-->
-<!--    <button id="calculateArea">Рассчитать площадь</button>-->
-<!--    <button id="saveData">Сохранить данные</button>-->
-<!--    <button id="addLineLabel">Добавить подпись</button>-->
-<!--    <div id="areaResult"></div>-->
-<!--  </div>-->
-<!--    -->
-<!--  &lt;!&ndash; Подключение JS файла &ndash;&gt;-->
-<!--  <script src="{% static 'fabric_inventory/js/canvas.js' %}"></script>-->
-<!--</body>-->
-<!--</html>-->

@@ -39,6 +39,7 @@ class Fabric(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.SET_DEFAULT, default='Anonymous')
     title = models.CharField(max_length=100, blank=True, null=True)
     image = models.ImageField(upload_to=user_directory_path, height_field=None, width_field=None, max_length=None)
+    canvas_data = models.JSONField(blank=True, null=True)
     area = models.FloatField()
     fabric_type = models.ForeignKey(FabricType, on_delete=models.CASCADE, default=None)
     date_added = models.DateTimeField(auto_now_add=True)

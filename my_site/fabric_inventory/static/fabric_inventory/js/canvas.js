@@ -619,39 +619,7 @@ function computePolygonArea(vertices) {
 // Обработчик кнопки расчета площади
 document.getElementById('calculateArea').addEventListener('click', calculateArea);
 
-// Функция для сохранения канваса как изображения
-// function saveCanvasAsImage() {
-//     // Получаем данные канваса
-//     let dataURL = canvas.toDataURL({
-//         format: 'png',
-//         multiplier: 1 // Множитель для увеличения разрешения
-//     });
-//     // Удаление префикса 'data:image/png;base64,' перед отправкой
-//     dataURL = dataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
-//     console.log(dataURL);
 
-//     fetch('/upload-image', {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json'
-//         },
-//         body: JSON.stringify({ image: dataURL })
-//       })
-//       .then(response => response.json())
-//       .then(data => console.log('Success:', data))
-//       .catch(error => console.error('Error:', error));
-    
-// }
-
-
-
-function test() {
-    console.log('test');
-    let obj = canvas.getObjects('polygon');
-    console.log('left', obj.left, 'top', obj.top, 'width', obj.width, 'height', obj.height);
-    // const ll = obj.getBoundingRect(true);
-    // console.log(ll);
-}
 function saveCroppedImage() {
     const allObjects = canvas.getObjects();
     let padding = 50;
@@ -708,7 +676,6 @@ function saveCroppedImage() {
         let uu = polygonsAndTextboxes.filter(ii =>
             ii.type === 'textbox'
         );
-        console.log("Гыыы", uu);
 
         const bounds = obj.getBoundingRect(); // Получаем границы объекта для правильного смещения
 
@@ -787,15 +754,18 @@ confirmActionButton.addEventListener('click', function() {
 });
 
 function sendCroppedImageToServer() {
-    current_area = calculateArea();
+    // current_area = calculateArea();
+    current_area = inputArea.value;
     if (!current_area){
         warningModal.show();
         return;
     }
-     let imageDataURL = canvas.toDataURL({
-         format: 'png',
-         multiplier: 1 // Множитель для увеличения разрешения
-     });
+    let imageDataURL = canvas.toDataURL({
+        format: 'png',
+        multiplier: 1 // Множитель для увеличения разрешения
+    });
+    let canvasData = canvas.toJSON();
+    console.log(canvasData);
     const selectElement = document.getElementById('categorySelect');
     // Получаем CSRF-токен
     const csrftoken = getCSRFToken();
@@ -811,6 +781,7 @@ function sendCroppedImageToServer() {
                             area: parseFloat(inputArea.value),
                             status: 'available',
                             fabrictype_id: parseInt(selectElement.value),
+                            canvas_data: canvasData,
                             })
     })
     .then(response => response.json())

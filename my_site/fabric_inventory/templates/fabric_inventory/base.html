@@ -33,6 +33,11 @@
                 <li class="nav-item">
                   <a class="nav-link {% if request.resolver_match.url_name == 'add_fabric' %}active{% endif %}" href="{% url 'add_fabric' %}">Добавить ткань</a>
                 </li>
+                {% if request.user.is_authenticated and request.user.is_superuser %}
+                  <li class="nav-item">
+                    <a class="nav-link" href="{% url 'admin:index' %}">Панель администратора</a>
+                  </li>
+                {% endif %}
               </ul>
             <ul class="navbar-nav mt-0 mb-lg-0">
               {% if user.is_authenticated %}
@@ -60,10 +65,8 @@
     </nav>
 
     <!-- Основное содержимое -->
-    <main class="container mt-3">
         {% block content %}  <!-- Блок для индивидуального содержимого страниц -->
         {% endblock %}
-    </main>
 
     <!-- Общий футер -->
     {% comment %} <footer class="bg-dark text-white text-center py-3 mt-5">

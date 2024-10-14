@@ -1,0 +1,61 @@
+{% extends "fabric_inventory/base.html" %}
+{% load static %}
+
+{% block title %}Редактировать Ткань{% endblock %}
+
+{% block content %}
+<main class='container mt-2'>
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="title" class="form-label">Название:</label>
+            {{ form.title }}
+        </div>
+        <div class="mb-3">
+            <label for="fabric_type" class="form-label">Тип ткани:</label>
+            {{ form.fabric_type }}
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">Статус:</label>
+            {{ form.status }}
+        </div>
+        <div class="mb-3">
+            <label for="area" class="form-label">Площадь (кв. м.):</label>
+            {{ form.area }}
+        </div>
+
+        <input type="hidden" id="canvasData" name="canvas_data" value="{{ fabric.canvas_data.value }}">
+
+        <div class="mb-3">
+            <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+    </form>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.6.0/fabric.min.js"></script>
+<script>
+    var canvas = new fabric.Canvas('canvas');
+
+    // Восстановление canvas из JSON
+    var canvasDataElement = document.getElementById('canvasData');
+    var canvasData = canvasDataElement.value;
+
+    if (canvasData) {
+        canvas.loadFromJSON(canvasData, function() {
+            // Перерисовываем холст после загрузки всех объектов
+            canvas.renderAll();
+        }, function(o, object) {
+            console.log('Объект загружен:', object);
+        });
+    }
+
+    // Сохранение данных canvas в скрытое поле перед отправкой формы
+    document.querySelector('form').addEventListener('submit', function() {
+        canvasDataElement.value = JSON.stringify(canvas.toJSON());
+    });
+</script>
+{% endblock %}

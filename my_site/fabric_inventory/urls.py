@@ -12,4 +12,5 @@ urlpatterns = [
     path('upload-image', views.upload_fabric_image, name='upload_image'),
     path('login/', views.LoginUser.as_view(), name='login'),
     path('logout/', LogoutView.as_view(next_page='home'), name='logout'),
+    path('fabric/<int:pk>/edit/', views.FabricEditView.as_view(), name='fabric_edit'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
