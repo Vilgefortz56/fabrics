@@ -37,7 +37,8 @@
                     <div class="col">
                         <div class="card border-secondary mb-0" style="max-width: 100%;">
                             <img src="{{ fabric.image.url }}" class="card-img-top border border-secondary-subtle" alt="{{ fabric.user.username}}">
-                            <div class="card-body">
+                            <div class="card-body {% if request.user.is_authenticated %} 
+                            {% if request.user.is_superuser or request.user.role == 'admin' or request.user.role == 'store'%} mb-0 pb-0 {% endif %} {% endif %}">
                             <h5 class="card-title">Ткань {{ fabric.id }} </h5>
                             <p class="card-text">Добавлено: {{ fabric.user.username }}</p>
                             <p class="card-text">Тип материала:<span class="card-text fw-bold"> {{ fabric.fabric_type.name }}</span></p> 
@@ -47,13 +48,29 @@
                                                             {% else %}
                                                                 <span class="badge text-bg-danger">Использована </span>
                                                             {% endif %}</p>
+                            {% if request.user.is_authenticated %}
+                                {% if request.user.is_superuser or request.user.role == 'admin' or request.user.role == 'store'%}
+                                    <p class="card-text d-inline-block justify-content-between">
+                                        <small class="text-body-secondary mt-1 d-inline-block me-5">Последнее изменение: {{fabric.date_updated}} </small>
+                                            <form method="POST" class="d-inline-block ms-4" action="{% url 'fabric_delete' fabric.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger ">Удалить</button>
+                                            </form>
+                                            <form method="POST" class="d-inline-block ms-3" action="{% url 'fabric_edit' fabric.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-secondary ">Редактировать</button>
+                                            </form>
+                                    </p>
+                                
+                                    
+                                {% endif %}
+                            {% else %}
                             <p class="card-text"><small class="text-body-secondary">Последнее изменение: {{fabric.date_updated}} </small></p>
+                            {% endif %}
+                            
                             </div>
                         </div>
                     </div>
-                    {% comment %} {% if forloop.counter|divisibleby:2 %}
-                        <div class="w-100"></div>  <!-- Новая строка после каждой второй карточки -->
-                    {% endif %} {% endcomment %}
                 {% endfor %}
             </div>
             {% else %}

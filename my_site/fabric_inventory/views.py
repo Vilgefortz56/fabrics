@@ -4,11 +4,12 @@ from typing import Any
 
 
 from django.contrib.auth.views import LoginView
+from django.views import View
 from django.views.generic import ListView, UpdateView
 from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django.http import JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse, reverse_lazy
 
@@ -35,6 +36,13 @@ def home_page(request):
 
     return render(request, 'fabric_inventory/home.html')
 
+
+
+class FabricDeleteView(View):
+    def post(self, request, pk, *args, **kwargs):
+        fabric = get_object_or_404(Fabric, pk=pk)
+        fabric.delete()  # Это вызовет переопределённый метод delete
+        return redirect(reverse('home'))
 
 
 class FabricEditView(UpdateView):
