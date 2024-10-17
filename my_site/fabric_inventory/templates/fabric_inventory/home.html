@@ -4,6 +4,11 @@
 {% block content %}
 
 <main class="container-float mt-3">
+    <!-- Сама форма, которая будет отправляться по кнопке в модальном окне -->
+    <form id="deleteForm" method="POST" action="{% url 'fabric_delete' fabric.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger d-none" id="deleteBtn">Удалить</button>
+    </form>
     <!-- Модальное окно с удалением ткани-->
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="kek" aria-hidden="true">
         <div class="modal-dialog">
@@ -16,14 +21,14 @@
             Вы уверены, что хотите удалить ткань?
             </div>
             <div class="modal-footer">
-            <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Закрыть</button>
-            <button type="button" class="btn btn-secondary" id='delete'>Сохранить</button>
+                <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-secondary" id="delete">Удалить</button>
             </div>
         </div>
         </div>
     </div>
      <!-- Модальное окно с редактированием результатов -->
-     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="kek" aria-hidden="true">
+     {% comment %} <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="kek" aria-hidden="true">
         <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -39,7 +44,7 @@
             </div>
         </div>
         </div>
-    </div>
+    </div> {% endcomment %}
     <div class="row mx-2">
         <aside class="col-md-2 mb-4">
             <!-- Фильтры -->
