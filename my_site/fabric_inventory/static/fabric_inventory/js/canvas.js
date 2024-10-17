@@ -221,18 +221,9 @@ canvas.on('mouse:down', function(o){
                 index: line.index_line, 
                 point1: { x: line.point1.x, y: line.point1.y }, // координаты начала линии
                 point2: { x: line.point2.x, y: line.point2.y }, // координаты конца линии
-                // labelText: parseInt(label.text) // текст подписи (по умолчанию "Размер", но обновляется позже)
                 label_obj: label
             });
-
-            // Обновляем подпись, когда пользователь вводит текст
-            // label.on('editing:exited', function() {
-            //     let lastLabel = linesWithLabels[linesWithLabels.length - 1];
-            //     lastLabel.labelText = parseInt(label.text);
-            //     console.log('Подпись обновлена:', lastLabel);
-            // });
         }
-        // labelMode = false;
         console.log('linesWithLabels', linesWithLabels);
         return;
     };
@@ -307,11 +298,6 @@ canvas.on('mouse:dblclick', function(o) {
     }
 });
 
-// canvas.on('text:changed', function(e) {
-//     console.log('Текст изменился в объекте:', e.target);
-
-    
-//   });
 
 function findObjectByName(name) {
     return canvas.getObjects().filter(function(obj) {
@@ -545,13 +531,11 @@ function calculateArea() {
         // let realSideLengths = [];
         // let vertices = [];
         linesWithLabels.sort((a, b) => a.index - b.index);
-        // let realSideLengths = linesWithLabels.map(line => line.labelText);
         let realSideLengths = linesWithLabels.map(line => parseFloat(line.label_obj.text));
         let vertices = linesWithLabels.map(line => line.point1);
         console.log(realSideLengths);
         console.log(vertices);
         let area = calculatePolygonAreaWithRealDimensions(vertices, realSideLengths).toFixed(2);
-        // document.getElementById('areaResult').innerText = 'Площадь: ' + area.toFixed(2) + ' кв.м';
         inputArea.value = area;
         console.log(area);
         current_area = area;
@@ -623,7 +607,6 @@ document.getElementById('calculateArea').addEventListener('click', calculateArea
 function saveCroppedImage() {
     const allObjects = canvas.getObjects();
     let padding = 50;
-    // Находим объект Polygon и все Textbox
     // Находим объект Polygon и все Textbox
     const polygon = allObjects.find(obj => obj.type === 'polygon');
     const textboxes = allObjects.filter(obj => obj.type === 'textbox');
@@ -746,7 +729,6 @@ function getCSRFToken() {
 const confirmActionButton = document.getElementById('confirmAction');
 const confirmationModal = new bootstrap.Modal(document.getElementById('confirmModal'));
 const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
-
 // Если пользователь подтверждает действие, выполняем отправку данных
 confirmActionButton.addEventListener('click', function() {
     confirmationModal.hide(); // Закрываем модальное окно

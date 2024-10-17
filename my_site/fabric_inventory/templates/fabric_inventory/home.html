@@ -2,7 +2,44 @@
 {% load static %}
 {% block title %} {{fabrics.title}} {% endblock %}
 {% block content %}
+
 <main class="container-float mt-3">
+    <!-- Модальное окно с удалением ткани-->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="kek" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-5" id="kek">Уведомление</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            Вы уверены, что хотите удалить ткань?
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Закрыть</button>
+            <button type="button" class="btn btn-secondary" id='delete'>Сохранить</button>
+            </div>
+        </div>
+        </div>
+    </div>
+     <!-- Модальное окно с редактированием результатов -->
+     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="kek" aria-hidden="true">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-5" id="kek">Уведомление</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+            Вы уверены, что хотите удалить ткань?
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Закрыть</button>
+            <button type="button" class="btn btn-secondary" id='delete'>Сохранить</button>
+            </div>
+        </div>
+        </div>
+    </div>
     <div class="row mx-2">
         <aside class="col-md-2 mb-4">
             <!-- Фильтры -->
@@ -54,11 +91,11 @@
                                         <small class="text-body-secondary mt-1 d-inline-block me-5">Последнее изменение: {{fabric.date_updated}} </small>
                                             <form method="POST" class="d-inline-block ms-4" action="{% url 'fabric_delete' fabric.id %}">
                                                 {% csrf_token %}
-                                                <button type="submit" class="btn btn-danger ">Удалить</button>
+                                                <button type="submit" class="btn btn-danger" id="deleteBtn">Удалить</button>
                                             </form>
                                             <form method="POST" class="d-inline-block ms-3" action="{% url 'fabric_edit' fabric.id %}">
                                                 {% csrf_token %}
-                                                <button type="submit" class="btn btn-secondary ">Редактировать</button>
+                                                <button type="submit" class="btn btn-secondary" id="editBtn">Редактировать</button>
                                             </form>
                                     </p>
                                 
@@ -107,6 +144,7 @@
         </div>
     </div>
 </main>
-
+<!-- Подключение JS файла -->
+<script src="{% static 'fabric_inventory/js/home.js' %}"></script>
 {% endblock%}
 
