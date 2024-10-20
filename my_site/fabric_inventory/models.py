@@ -43,7 +43,7 @@ class Fabric(models.Model):
     title = models.CharField(max_length=100, blank=True, null=True, verbose_name='Название')
     image = models.ImageField(upload_to=user_directory_path, height_field=None, width_field=None, max_length=None, 
                               blank=True, null=True, verbose_name='Изображение')
-    canvas_data = models.JSONField(blank=True, null=True, verbose_name='Данные ткани')
+    # canvas_data = models.JSONField(blank=True, null=True, verbose_name='Данные ткани')
     area = models.FloatField(blank=True, null=True, verbose_name='Площадь')
     fabric_type = models.ForeignKey(FabricType, on_delete=models.CASCADE, default=None, verbose_name='Тип ткани')
     date_added = models.DateTimeField(auto_now_add=True, verbose_name='Дата добавления')

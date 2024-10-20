@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Fabric, CustomUser, FabricType
-
+from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 
@@ -43,3 +43,4 @@ class FabricAdmin(admin.ModelAdmin):
 admin.site.register(FabricType, FabricTypeAdmin)
 admin.site.register(Fabric, FabricAdmin)
 admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.unregister(Group)

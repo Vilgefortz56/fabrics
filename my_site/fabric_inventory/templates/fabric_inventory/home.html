@@ -4,47 +4,7 @@
 {% block content %}
 
 <main class="container-float mt-3">
-    <!-- Сама форма, которая будет отправляться по кнопке в модальном окне -->
-    <form id="deleteForm" method="POST" action="{% url 'fabric_delete' fabric.id %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger d-none" id="deleteBtn">Удалить</button>
-    </form>
-    <!-- Модальное окно с удалением ткани-->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="kek" aria-hidden="true">
-        <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-            <h1 class="modal-title fs-5" id="kek">Уведомление</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-            Вы уверены, что хотите удалить ткань?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Закрыть</button>
-                <button type="button" class="btn btn-secondary" id="delete">Удалить</button>
-            </div>
-        </div>
-        </div>
-    </div>
-     <!-- Модальное окно с редактированием результатов -->
-     {% comment %} <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="kek" aria-hidden="true">
-        <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-            <h1 class="modal-title fs-5" id="kek">Уведомление</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-            Вы уверены, что хотите удалить ткань?
-            </div>
-            <div class="modal-footer">
-            <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Закрыть</button>
-            <button type="button" class="btn btn-secondary" id='delete'>Сохранить</button>
-            </div>
-        </div>
-        </div>
-    </div> {% endcomment %}
+    
     <div class="row mx-2">
         <aside class="col-md-2 mb-4">
             <!-- Фильтры -->
@@ -65,9 +25,9 @@
             <form method="GET" class="mt-2">
                 <label for="per_page">Количество карточек на странице:</label>
                 <select name="per_page" id="per_page" onchange="this.form.submit()" class="form-select">
-                    <option value="6" {% if per_page == '6' %}selected{% endif %}>6</option>
-                    <option value="50" {% if per_page == '50' %}selected{% endif %}>50</option>
-                    <option value="100" {% if per_page == '100' %}selected{% endif %}>100</option>
+                    <option value="20" {% if per_page == '20' %}selected{% endif %}>20</option>
+                    <option value="40" {% if per_page == '40' %}selected{% endif %}>40</option>
+                    <option value="60" {% if per_page == '60' %}selected{% endif %}>60</option>
                 </select>
             </form>
         </aside>
@@ -76,6 +36,27 @@
             {% if fabrics %}
             <div class="row row-cols-1 row-cols-md-2 g-4">
                 {% for fabric in fabrics %}
+                    <!-- Модальное окно с удалением ткани-->
+                    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="kek" aria-hidden="true">
+                        <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="kek">Уведомление</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                            Вы уверены, что хотите удалить ткань?
+                            </div>
+                            <div class="modal-footer">
+                                <form id="deleteForm" method="POST" action="{% url 'fabric_delete' fabric.id %}">
+                                    {% csrf_token %}
+                                    <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Закрыть</button>
+                                </form>
+                                <button type="button" class="btn btn-secondary" id="delete">Удалить</button>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
                     <div class="col">
                         <div class="card border-secondary mb-0" style="max-width: 100%;">
                             <img src="{{ fabric.image.url }}" class="card-img-top border border-secondary-subtle" alt="{{ fabric.user.username}}">

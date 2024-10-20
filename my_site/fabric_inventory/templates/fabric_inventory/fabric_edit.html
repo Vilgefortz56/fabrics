@@ -5,56 +5,99 @@
 
 {% block content %}
 <main class='container mt-2'>
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST"  enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="mb-3">
-            <label for="title" class="form-label">Название:</label>
-            {{ form.title }}
-        </div>
-        <div class="mb-3">
-            <label for="fabric_type" class="form-label">Тип ткани:</label>
-            {{ form.fabric_type }}
-        </div>
-        <div class="mb-3">
-            <label for="status" class="form-label">Статус:</label>
-            {{ form.status }}
-        </div>
-        <div class="mb-3">
-            <label for="area" class="form-label">Площадь (кв. м.):</label>
-            {{ form.area }}
-        </div>
+            <div class="row">
+                <!-- Тип ткани -->
+                <div class="col-md-3">
+                    <label for="fabric_type" class="form-label">Тип ткани:</label>
+                    <select name="fabric_type" id="fabric_type" class="form-select">
+                        {% for choice in form.fabric_type.field.choices %}
+                            <option value="{{ choice.0 }}" {% if choice.0 == fabric.fabric_type.id %} selected="selected" {% endif %}>
+                                {{ choice.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- Статус -->
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Статус:</label>
+                    <select name="status" id="status" class="form-select">
+                        {% for choice in form.status.field.choices %}
+                            <option value="{{ choice.0 }}" {% if choice.0 == fabric.status %} selected="selected" {% endif %}>
+                                {{ choice.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-        <input type="hidden" id="canvasData" name="canvas_data" value="{{ fabric.canvas_data.value }}">
+                <!-- Площадь -->
+                <div class="col-md-3">
+                    <label for="area" class="form-label">Площадь (кв. м.):</label>
+                    <input type="number" name="area" id="area" class="form-control" value="{{ fabric.area }}">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-secondary h-100">Сохранить</button>
+                </div>
+            </div>
+        <input type="hidden" id="canvasData" name="canvas_data" value="{{ fabric.image.url }}">
 
-        <div class="mb-3">
+        <div class="mb-3 mt-3">
             <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
         </div>
 
-        <div class="d-flex justify-content-between">
-            <button type="submit" class="btn btn-primary">Сохранить</button>
-        </div>
+        
     </form>
 </main>
 
 <script>
-    var canvas = new fabric.Canvas('canvas');
-
+    let canvas = new fabric.Canvas('canvas');
+    // Получение размеров canvas
+    let canvasWidth = canvas.getWidth();
+    let canvasHeight = canvas.getHeight();
+    {% comment %} canvas.clear(); {% endcomment %}
     // Восстановление canvas из JSON
-    var canvasDataElement = document.getElementById('canvasData');
-    var canvasData = canvasDataElement.value;
-
-    if (canvasData) {
-        canvas.loadFromJSON(canvasData, function() {
-            // Перерисовываем холст после загрузки всех объектов
-            canvas.renderAll();
-        }, function(o, object) {
-            console.log('Объект загружен:', object);
+    let canvasDataElement = document.getElementById('canvasData');
+    console.log('img', canvasDataElement);
+    fabric.Image.fromURL(canvasDataElement.value, function(img) {
+        img.scaleToWidth(canvasWidth);
+        img.scaleToHeight(canvasHeight);
+        img.set({
+            left: 0,
+            top: 0,
+            selectable: false,   // Отключаем возможность выбора
+            hasControls: false,  // Отключаем контролы для изменения размеров
+            hasBorders: false,   // Отключаем рамки при выборе
+            lockMovementX: true, // Блокируем движение по оси X
+            lockMovementY: true, // Блокируем движение по оси Y
+            lockScalingX: true,  // Блокируем масштабирование по оси X
+            lockScalingY: true,  // Блокируем масштабирование по оси Y
+            lockRotation: true   // Блокируем вращение
         });
-    }
+    
+        // Добавление изображения на canvas
+        canvas.add(img);
+    
+        // Перерисовка canvas
+        canvas.renderAll();
+    })
+    {% comment %} let canvasData = canvasDataElement.value; {% endcomment %}
+    {% comment %} console.log('canvasDataElement', canvasData); {% endcomment %}
+    //if (canvasData) {
+      //  console.log('canvasDataElement', canvasData);
+      //  canvas.loadFromJSON(JSON.stringify(canvasData), canvas.renderAll.bind(canvas));//function() {
+            // Перерисовываем холст после загрузки всех объектов
+            //canvas.renderAll();
+            //console.log('Объекты загружены:');
+        // function(o, object) {
+        //    console.log('Объект загружен:', object);
+        //});
+    //}
 
     // Сохранение данных canvas в скрытое поле перед отправкой формы
     document.querySelector('form').addEventListener('submit', function() {
         canvasDataElement.value = JSON.stringify(canvas.toJSON());
     });
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
 {% endblock %}

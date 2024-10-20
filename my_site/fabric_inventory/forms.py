@@ -31,7 +31,4 @@ class FabricFilterForm(forms.Form):
 class FabricEditForm(forms.ModelForm):
     class Meta:
         model = Fabric
-        fields = ['title', 'fabric_type', 'status', 'area', 'canvas_data']
-        widgets = {
-            'canvas_data': forms.HiddenInput(),  # We'll handle canvas data through JavaScript
-        }
+        fields = ['title', 'fabric_type', 'status', 'area']

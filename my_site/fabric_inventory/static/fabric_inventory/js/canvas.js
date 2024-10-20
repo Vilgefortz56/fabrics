@@ -1,4 +1,3 @@
-console.log('Hello, world!');
 const inputArea = document.getElementById('inputArea');
 let current_area = 0;
 
@@ -104,9 +103,9 @@ drawPolylineToolButton.addEventListener('click', function() {
 // Функция для установки активной кнопки
 function setActiveButton(button) {
     [selectToolButton, drawPolylineToolButton, addLineLabelButton].forEach(btn => {
-    btn.classList.remove('active-button');
+    btn.classList.remove('bg-secondary', 'text-white', 'active-button');
     });
-    button.classList.add('active-button');
+    button.classList.add('bg-secondary', 'text-white', 'active-button');
 }
 
 // Устанавливаем режим выделения по умолчанию
@@ -117,13 +116,12 @@ setActiveButton(selectToolButton);
 function arePointsCollinear(p1, p2, p3) {
     return (p2.y - p1.y) * (p3.x - p2.x) === (p3.y - p2.y) * (p2.x - p1.x);
 }
-// Функция для упрощения полилинии: объединение коллинеарных точек
+
 // Функция для упрощения полилинии: объединение коллинеарных точек
 function simplifyPolyline(points) {
     if (points.length < 3) return points;  // Если меньше 3 точек, ничего не упрощаем
     
     let simplifiedPoints = [points[0]];  // Начинаем с первой точки
-//    Я же писал, что вторник и пятница у меня теперь отпадают, так как пары начались. // let isClosed = points[0].x === points[points.length - 1].x && points[0].y === points[points.length - 1].y;
 
     for (let i = 1; i < points.length - 1; i++) {
         let p1 = simplifiedPoints[simplifiedPoints.length - 1];  // Последняя добавленная точка
@@ -177,16 +175,7 @@ canvas.on('mouse:down', function(o){
         // Поиск полигона при клике рядом с его линией
         let result = findPolygonAtClick(pointer);
         if (result) {
-            let polygon = result.polygon;
             let line = result.line;
-
-            // if (line.labelAdded) {
-            //     alert("На эту линию уже добавлена подпись.");
-            //     return; // Выход из функции, если подпись уже существует
-            // }
-
-            // line.labelAdded = true;
-            // console.log("Подпись добавлена на линию:", line.labelAdded);
 
             if (linesWithLabels.some(l => l.index === line.index_line)) {
                 console.log("На эту линию уже добавлена подпись.");
@@ -510,8 +499,6 @@ document.addEventListener('keydown', function(e) {
         polyline = null;
         polylinePoints = [];
         linesWithLabels = [];
-        // Очищаем площадь, если удалили выделенный объект
-        // document.getElementById('areaResult').innerText = '';
     }
     };
     if (e.key === 'Enter') {
@@ -528,8 +515,6 @@ document.addEventListener('keydown', function(e) {
 // Функция расчета площади фигуры
 function calculateArea() {
     if (linesWithLabels){
-        // let realSideLengths = [];
-        // let vertices = [];
         linesWithLabels.sort((a, b) => a.index - b.index);
         let realSideLengths = linesWithLabels.map(line => parseFloat(line.label_obj.text));
         let vertices = linesWithLabels.map(line => line.point1);
@@ -746,8 +731,8 @@ function sendCroppedImageToServer() {
         format: 'png',
         multiplier: 1 // Множитель для увеличения разрешения
     });
-    let canvasData = canvas.toJSON();
-    console.log(canvasData);
+    // let canvasData = canvas.toJSON();
+    // console.log(canvasData);
     const selectElement = document.getElementById('categorySelect');
     // Получаем CSRF-токен
     const csrftoken = getCSRFToken();
@@ -763,7 +748,7 @@ function sendCroppedImageToServer() {
                             area: parseFloat(inputArea.value),
                             status: 'available',
                             fabrictype_id: parseInt(selectElement.value),
-                            canvas_data: canvasData,
+                            // canvas_data: canvasData,
                             })
     })
     .then(response => response.json())
