@@ -33,6 +33,16 @@ class FabricType(models.Model):
         verbose_name_plural = 'Типы тканей'
 
 
+class FabricView(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name='Вид ткани')
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = 'Вид ткани'
+        verbose_name_plural = 'Виды тканей'
+
 
 def user_directory_path(instance: CustomUser, filename):
     # Путь будет вида: "user_<id>/YYYY-MM-DD/filename"
@@ -45,6 +55,7 @@ class Fabric(models.Model):
                               blank=True, null=True, verbose_name='Изображение')
     # canvas_data = models.JSONField(blank=True, null=True, verbose_name='Данные ткани')
     area = models.FloatField(blank=True, null=True, verbose_name='Площадь')
+    fabric_view = models.ForeignKey(FabricView, on_delete=models.CASCADE, default=None, verbose_name='Вид ткани')
     fabric_type = models.ForeignKey(FabricType, on_delete=models.CASCADE, default=None, verbose_name='Тип ткани')
     date_added = models.DateTimeField(auto_now_add=True, verbose_name='Дата добавления')
     date_updated = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')

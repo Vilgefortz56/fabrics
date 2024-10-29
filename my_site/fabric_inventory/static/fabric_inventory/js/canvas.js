@@ -748,6 +748,7 @@ function sendCroppedImageToServer() {
                             area: parseFloat(inputArea.value),
                             status: 'available',
                             fabrictype_id: parseInt(selectElement.value),
+                            fabricview_id: parseInt(document.getElementById('viewSelect').value),
                             // canvas_data: canvasData,
                             })
     })

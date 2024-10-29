@@ -4,6 +4,15 @@ delete_btn.addEventListener('click', function() {
     delete_modal.hide(); // Закрываем модальное окно
 
 });
+function toggleNested(id) {
+    const element = document.getElementById(id);
+    console.log(element);
+    if (element.style.display === "none" || element.style.display === "") {
+        element.style.display = "block";  // Показываем подкатегории
+    } else {
+        element.style.display = "none";   // Скрываем подкатегории
+    }
+}
 
 document.getElementById('deleteBtn').addEventListener('click', function(event) {
     event.preventDefault(); // Остановить стандартную отправку формы

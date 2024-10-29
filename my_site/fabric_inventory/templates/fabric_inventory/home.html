@@ -6,7 +6,83 @@
 <main class="container-float mt-3">
     
     <div class="row mx-2">
+        
+        <!-- Фильтры справа -->
         <aside class="col-md-2 mb-4">
+            {% comment %} <form method="GET"> {% endcomment %}
+                <div class="accordion" id="filterAccordion">
+                    <!-- Фильтр по типу ткани -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="headingFabricType">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFabricType" aria-expanded="true" aria-controls="collapseFabricType">
+                                Фильтр
+                            </button>
+                        </h2>
+                        <div id="collapseFabricType" class="accordion-collapse collapse show" aria-labelledby="headingFabricType">
+                            <div class="accordion-body">
+                                <!-- Тип ткани 1 -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="fabricType1">
+                                        <label class="form-check-label" for="fabricType1">Тип ткани 1</label>
+                                    </div>
+                                    <i class="bi bi-chevron-down toggle-icon" onclick="toggleNested('nestedType1')"></i>
+                                </div>
+                                <!-- Виды тканей для Типа ткани 1 -->
+                                <div class="nested-checkboxes" id="nestedType1">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="fabricType1View1">
+                                        <label class="form-check-label" for="fabricType1View1">Вид 1</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="fabricType1View2">
+                                        <label class="form-check-label" for="fabricType1View2">Вид 2</label>
+                                    </div>
+                                </div>
+
+                                <!-- Тип ткани 2 -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="fabricType2">
+                                        <label class="form-check-label" for="fabricType2">Тип ткани 2</label>
+                                    </div>
+                                    <i class="bi bi-chevron-down toggle-icon" onclick="toggleNested('nestedType2')"></i>
+                                </div>
+                                <!-- Виды тканей для Типа ткани 2 -->
+                                <div class="nested-checkboxes" id="nestedType2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="fabricType2View1">
+                                        <label class="form-check-label" for="fabricType2View1">Вид 1</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="fabricType2View2">
+                                        <label class="form-check-label" for="fabricType2View2">Вид 2</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="" id="fabricType2View3">
+                                        <label class="form-check-label" for="fabricType2View3">Вид 3</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Кнопка для применения фильтров -->
+                <button type="submit" class="btn btn-secondary mt-3 w-100">Применить фильтры</button>
+            {% comment %} </form> {% endcomment %}
+
+            <!-- Выбор количества карточек на странице -->
+            <form method="GET" class="mt-3">
+                <label for="per_page">Количество карточек на странице:</label>
+                <select name="per_page" id="per_page" onchange="this.form.submit()" class="form-select">
+                    <option value="20" {% if per_page == '20' %}selected{% endif %}>20</option>
+                    <option value="40" {% if per_page == '40' %}selected{% endif %}>40</option>
+                    <option value="60" {% if per_page == '60' %}selected{% endif %}>60</option>
+                </select>
+            </form>
+        </aside>
+        {% comment %} <aside class="col-md-2 mb-4">
             <!-- Фильтры -->
             <form method="GET" class="">
                 <div class="row">
@@ -30,7 +106,7 @@
                     <option value="60" {% if per_page == '60' %}selected{% endif %}>60</option>
                 </select>
             </form>
-        </aside>
+        </aside> {% endcomment %}
         <div class="col-md-9 my-4">
             <!-- Карточки с тканями -->
             {% if fabrics %}
@@ -65,6 +141,7 @@
                             <h5 class="card-title">Ткань {{ fabric.id }} </h5>
                             <p class="card-text">Добавлено: {{ fabric.user.username }}</p>
                             <p class="card-text">Тип материала:<span class="card-text fw-bold"> {{ fabric.fabric_type.name }}</span></p> 
+                            <p class="card-text">Вид материала:<span class="card-text fw-bold"> {{ fabric.fabric_view.name }}</span></p> 
                             <p class="card-text">Площадь: {{ fabric.area }}</p>
                             <p class="card-text">Статус: {% if fabric.status == 'available' %}
                                                                 <span class="badge text-bg-success">В наличии</span>

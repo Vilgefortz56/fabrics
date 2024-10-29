@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse, reverse_lazy
 
 from .forms import CustomLoginForm, FabricFilterForm, FabricEditForm
-from .models import Fabric, FabricType
+from .models import Fabric, FabricType, FabricView
 from django.views.decorators.csrf import csrf_exempt
 import base64
 import os
@@ -24,7 +24,8 @@ from django.conf import settings
 @login_required
 def add_fabric_page(request):
     fabric_types = FabricType.objects.all()
-    return render(request, 'fabric_inventory/fabric_canvas.html', {'fabric_types': fabric_types})
+    fabric_views = FabricView.objects.all()
+    return render(request, 'fabric_inventory/fabric_canvas.html', {'fabric_types': fabric_types, 'fabric_views': fabric_views})
 
 def login(request):
     return render(request, 'fabric_inventory/login.html')
@@ -148,6 +149,7 @@ def upload_fabric_image(request):
         # canvas_data = body_data.get('canvas_data')
         # print(canvas_data)
         fabrictype_instance = FabricType.objects.get(pk=fabrictype_id)
+        fabricview_instance = FabricView.objects.get(pk=int(body_data.get('fabricview_id')))
         if image_base64:
             title = f'image_user_{user.username}_{datetime.now().strftime("%Y-%m-%d")}'
             image_data = base64.b64decode(image_base64)
@@ -157,6 +159,7 @@ def upload_fabric_image(request):
                 area=round(area, 2),
                 status=status,
                 fabric_type = fabrictype_instance,
+                fabric_view = fabricview_instance,
                 # canvas_data = canvas_data,
             )
             fabric.image.save(f"{title}.png", ContentFile(image_data), save=True)
