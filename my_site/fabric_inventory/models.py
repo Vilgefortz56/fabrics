@@ -35,6 +35,7 @@ class FabricType(models.Model):
 
 class FabricView(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name='Вид ткани')
+    fabric_type = models.ForeignKey(FabricType, related_name='views', on_delete=models.CASCADE, default=None, verbose_name='Тип ткани')
 
     def __str__(self):
         return self.name

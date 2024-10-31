@@ -25,7 +25,16 @@ from django.conf import settings
 def add_fabric_page(request):
     fabric_types = FabricType.objects.all()
     fabric_views = FabricView.objects.all()
-    return render(request, 'fabric_inventory/fabric_canvas.html', {'fabric_types': fabric_types, 'fabric_views': fabric_views})
+
+        # Формируем словарь для передачи в JSON
+    fabric_data = {
+        fabric_type.id: list(fabric_type.views.values('id', 'name'))
+        for fabric_type in fabric_types
+    }
+
+    return render(request, 'fabric_inventory/fabric_canvas.html', {'fabric_types': fabric_types, 
+                                                                   'fabric_views': fabric_views,
+                                                                   'fabric_data': fabric_data})
 
 def login(request):
     return render(request, 'fabric_inventory/login.html')
@@ -146,10 +155,15 @@ def upload_fabric_image(request):
         area = body_data.get('area')
         status = body_data.get('status')
         fabrictype_id = int(body_data.get('fabrictype_id'))
+        fabricview_id = body_data.get('fabricview_id')
         # canvas_data = body_data.get('canvas_data')
         # print(canvas_data)
         fabrictype_instance = FabricType.objects.get(pk=fabrictype_id)
-        fabricview_instance = FabricView.objects.get(pk=int(body_data.get('fabricview_id')))
+        if fabricview_id is None:    
+            # fabricview_instance = FabricView.objects.get(pk=1)
+            fabricview_instance = None
+        else:
+            fabricview_instance = FabricView.objects.get(pk=fabricview_id)
         if image_base64:
             title = f'image_user_{user.username}_{datetime.now().strftime("%Y-%m-%d")}'
             image_data = base64.b64decode(image_base64)
