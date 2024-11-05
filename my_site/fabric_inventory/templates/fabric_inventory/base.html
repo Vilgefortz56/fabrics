@@ -22,14 +22,14 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark" data-bs-theme="dark">
           <div class="container">
             <img src="/static/fabric_inventory/images/logo_mir_remney.jpg" alt="Logo" width="50" height="50" class="d-inline-block align-text-top me-2">
-            <a class="navbar-brand" href="{% url 'home'%}">Мир ремней</a>
+            <a class="navbar-brand" href="{% url 'fabric_inventory:home'%}">Мир ремней</a>
             <div class="collapse navbar-collapse" id="navbarColor01">
               <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                  <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home'%}">Все ткани</a>
+                  <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'fabric_inventory:home'%}">Все ткани</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link {% if request.resolver_match.url_name == 'add_fabric' %}active{% endif %}" href="{% url 'add_fabric' %}">Добавить ткань</a>
+                  <a class="nav-link {% if request.resolver_match.url_name == 'add_fabric' %}active{% endif %}" href="{% url 'fabric_inventory:add_fabric' %}">Добавить ткань</a>
                 </li>
                 {% if request.user.is_authenticated %}
                   {% if request.user.is_superuser or request.user.role == 'admin' %}
@@ -45,14 +45,14 @@
                   <a class="nav-link" href="#">{{ user.username }}</a>
                 </li>
                 <li class="nav-item mt-1">
-                  <form method="post" action="{% url 'logout' %}">
+                  <form method="post" action="{% url 'fabric_inventory:logout' %}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-secondary">Выход</button>
                   </form>
                 </li>
               {% else %}
                 <li class="nav-item mt-1">
-                  <form method="post" action="{% url 'login' %}">
+                  <form method="post" action="{% url 'fabric_inventory:login' %}">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-secondary">Войти</button>
                   </form>

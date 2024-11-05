@@ -9,57 +9,33 @@
         
         <!-- Фильтры справа -->
         <aside class="col-md-2 mb-4">
-            <form method="GET">
-                <!-- Fabric Types Section -->
+            <form id="filterForm" method="get" action="{% url 'fabric_inventory:home' %}">
                 <div class="mb-3">
-                    <div>
-                        {% comment %} <label for="id_status">Статус</label> {% endcomment %}
-                        <h5>Cтатус</h5>
-                        {{ form.status }}
-                    </div>
-                    <h5>Тип ткани</h5>
-                    <div>
-                    {% comment %} <input type="checkbox" class="form-check-input fabric-type" id="cotton" value="cotton">
-                    <label class="form-check-label" for="cotton">Хлопок</label> {% endcomment %}
-                    {{ form.fabric_types }}
-                    </div>
-                    <div>
-                        {% comment %} {{ form.fabric_views }} {% endcomment %}
-                    {% comment %} <input type="checkbox" class="form-check-input fabric-type" id="wool" value="wool">
-                    <label class="form-check-label" for="wool">Шерсть</label>
-                    </div>
-                    <div>
-                    <input type="checkbox" class="form-check-input fabric-type" id="silk" value="silk">
-                    <label class="form-check-label" for="silk">Шёлк</label> {% endcomment %}
-                    </div>
+                    {{ form.status.label_tag }}
+                    {{ form.status }}
                 </div>
-
-                <!-- Fabric Kinds Section (Initially Hidden) -->
+                
                 <div class="mb-3">
-                    <h5>Вид ткани</h5>
-                    {{ form.fabric_views }}
-                    <div id="cotton-kinds" class="fabric-kind-group d-none">
-                    <input type="checkbox" class="form-check-input" id="cotton-type1">
-                    <label class="form-check-label" for="cotton-type1">Хлопок Тонкий</label><br>
-                    <input type="checkbox" class="form-check-input" id="cotton-type2">
-                    <label class="form-check-label" for="cotton-type2">Хлопок Толстый</label>
-                    </div>
-                    <div id="wool-kinds" class="fabric-kind-group d-none">
-                    <input type="checkbox" class="form-check-input" id="wool-type1">
-                    <label class="form-check-label" for="wool-type1">Шерсть Мягкая</label><br>
-                    <input type="checkbox" class="form-check-input" id="wool-type2">
-                    <label class="form-check-label" for="wool-type2">Шерсть Грубая</label>
-                    </div>
-                    <div id="silk-kinds" class="fabric-kind-group d-none">
-                    <input type="checkbox" class="form-check-input" id="silk-type1">
-                    <label class="form-check-label" for="silk-type1">Шёлк Натуральный</label><br>
-                    <input type="checkbox" class="form-check-input" id="silk-type2">
-                    <label class="form-check-label" for="silk-type2">Шёлк Искусственный</label>
-                    </div>
+                    <label>Тип ткани</label>
+                    {% for checkbox in form.fabric_types %}
+                        <div class="form-check">
+                            {{ checkbox.tag }}
+                            {{ checkbox.choice_label }}
+                        </div>
+                    {% endfor %}
                 </div>
-
-                <!-- Кнопка для применения фильтров -->
-                <button type="submit" class="btn btn-secondary mt-3 w-100">Применить фильтры</button>
+            
+                <div class="mb-3"  id="view-container">
+                     <label>Вид ткани</label>
+                    {% for checkbox in form.fabric_views %}
+                        <div class="form-check">
+                            {{ checkbox.tag }}
+                            {{ checkbox.choice_label }}
+                        </div>
+                    {% endfor %} 
+                </div>
+            
+                <button type="submit" class="btn btn-secondary">Применить</button>
             </form>
 
             <!-- Выбор количества карточек на странице -->
@@ -114,7 +90,7 @@
                             Вы уверены, что хотите удалить ткань?
                             </div>
                             <div class="modal-footer">
-                                <form id="deleteForm" method="POST" action="{% url 'fabric_delete' fabric.id %}">
+                                <form id="deleteForm" method="POST" action="{% url 'fabric_inventory:fabric_delete' fabric.id %}">
                                     {% csrf_token %}
                                     <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Закрыть</button>
                                 </form>
@@ -142,11 +118,11 @@
                                 {% if request.user.is_superuser or request.user.role == 'admin' or request.user.role == 'store'%}
                                     <p class="card-text d-inline-block justify-content-between">
                                         <small class="text-body-secondary mt-1 d-inline-block me-5">Последнее изменение: {{fabric.date_updated}} </small>
-                                            <form method="POST" class="d-inline-block ms-4" action="{% url 'fabric_delete' fabric.id %}">
+                                            <form method="POST" class="d-inline-block ms-4" action="{% url 'fabric_inventory:fabric_delete' fabric.id %}">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn btn-danger" id="deleteBtn">Удалить</button>
                                             </form>
-                                            <form method="POST" class="d-inline-block ms-3" action="{% url 'fabric_edit' fabric.id %}">
+                                            <form method="POST" class="d-inline-block ms-3" action="{% url 'fabric_inventory:fabric_edit' fabric.id %}">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn btn-secondary" id="editBtn">Редактировать</button>
                                             </form>
@@ -198,7 +174,101 @@
     </div>
 </main>
 <!-- Инлайн-скрипт -->
+{% comment %} <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+    $(document).ready(function() {
+        // При изменении fabric_types загружаем соответствующие fabric_views
+        $('.fabric-type').on('change', function() {
+            const selectedTypes = $('.fabric-type:checked').map(function() {
+                return $(this).val();
+            }).get();
+
+            $.ajax({
+                url: "{% url 'fabric_inventory:get_fabric_views_ajax' %}",
+                data: {
+                    'fabric_types': selectedTypes
+                },
+                traditional: true,  // Для отправки массива данных
+                success: function(data) {
+                    const fabricViewContainer = $('.fabric-view').closest('.mb-3');
+                    fabricViewContainer.empty();
+                    $.each(data.views, function(index, view) {
+                        fabricViewContainer.append(`
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input fabric-view" id="view_${view.id}" name="fabric_views" value="${view.id}">
+                                <label class="form-check-label" for="view_${view.id}">${view.name}</label>
+                            </div>
+                        `);
+                    });
+                }
+            });
+        });
+    });
+</script> {% endcomment %}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const typeCheckboxes = document.querySelectorAll(".fabric-type");
+        const viewContainer = document.getElementById("view-container");
+
+        function updateFabricViews(selectedTypes) {
+            fetch("{% url 'fabric_inventory:get_fabric_views_ajax' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ fabric_types: selectedTypes })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Сохраняем выбранные fabric_views
+                const selectedViews = Array.from(document.querySelectorAll("input[name='fabric_views']:checked"))
+                                           .map(input => input.value);
+
+                // Очищаем предыдущие виды ткани и добавляем заголовок
+                viewContainer.innerHTML = "<label>Вид ткани</label>";
+
+                // Добавляем каждый вид ткани как чекбокс
+                data.views.forEach(view => {
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.name = "fabric_views";
+                    checkbox.value = view.id;
+                    checkbox.classList.add("form-check-input");
+
+                    // Отмечаем чекбокс, если он был выбран до обновления
+                    if (selectedViews.includes(view.id.toString())) {
+                        checkbox.checked = true;
+                    }
+
+                    const label = document.createElement("label");
+                    label.classList.add("form-check-label");
+                    label.appendChild(checkbox);
+                    label.append(" " + view.name);
+
+                    const div = document.createElement("div");
+                    div.classList.add("form-check");
+                    div.appendChild(label);
+
+                    viewContainer.appendChild(div);
+                });
+            })
+            .catch(error => console.error("Ошибка:", error));
+        }
+
+        typeCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener("change", function() {
+                const selectedTypes = Array.from(typeCheckboxes)
+                                          .filter(cb => cb.checked)
+                                          .map(cb => cb.value);
+                updateFabricViews(selectedTypes);
+            });
+        });
+    });
+</script>
+
+{% comment %} <script>
     document.addEventListener("DOMContentLoaded", function () {
       const fabricTypes = document.querySelectorAll(".fabric-type");
       
@@ -219,7 +289,7 @@
         });
       });
     });
-  </script>
+  </script> {% endcomment %}
 <!-- Подключение JS файла -->
 <script src="{% static 'fabric_inventory/js/home.js' %}" defer></script>
 {% endblock%}

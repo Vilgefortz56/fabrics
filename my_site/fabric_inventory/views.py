@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from typing import Any
+from collections import defaultdict
 
 from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView, LogoutView
@@ -43,6 +44,26 @@ def home_page(request):
 
     return render(request, 'fabric_inventory/home.html')
 
+# def get_fabric_views_ajax(request):
+#     fabric_types = request.GET.getlist('fabric_types[]')
+#     views = FabricView.objects.filter(fabric_type__id__in=fabric_types).values('id', 'name')
+#     return JsonResponse({'views': list(views)})
+
+@csrf_exempt
+def get_fabric_views_ajax(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        fabric_type_ids = data.get("fabric_types", [])
+        
+        # Получаем виды, связанные с выбранными типами
+        fabric_views = FabricView.objects.filter(fabric_type__id__in=fabric_type_ids).distinct()
+        
+        # Подготавливаем данные для отправки в формате JSON
+        views_data = [{"id": view.id, "name": view.name} for view in fabric_views]
+        
+        return JsonResponse({"views": views_data})
+
+    return JsonResponse({"views": []})
 
 
 class FabricDeleteView(View):
@@ -92,9 +113,14 @@ class FabricsHome(ListView):
                 queryset = queryset.filter(status=status)
             
             # Фильтрация по типу ткани
-            fabric_type = form.cleaned_data.get('fabric_type')
-            if fabric_type:
-                queryset = queryset.filter(fabric_type=fabric_type)
+            fabric_types = form.cleaned_data.get('fabric_types')
+            if fabric_types:
+                queryset = queryset.filter(fabric_type__in=fabric_types)
+            
+            # Фильтрация по виду ткани
+            fabric_views = form.cleaned_data.get('fabric_views')
+            if fabric_views:
+                queryset = queryset.filter(fabric_view__in=fabric_views)
         
         return queryset
 

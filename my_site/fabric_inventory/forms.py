@@ -33,31 +33,42 @@ class FabricFilterForm(forms.Form):
         required=False,
         choices=[('', 'Все'), ('available', 'В наличии'), ('used', 'Использована')],
         label="Статус",
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.Select(attrs={'class': 'form-select mb-3'})
     )
     fabric_types = forms.ModelMultipleChoiceField(
         queryset=FabricType.objects.all(),
-        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input fabric-type'}),
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input me-2 fabric-type'}),
         required=False,
         label="Тип ткани"
     )
     fabric_views = forms.ModelMultipleChoiceField(
-        queryset=FabricView.objects.none(),  # Заполним динамически
-        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        queryset=FabricView.objects.none(),
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input me-2 fabric-view'}),
         required=False,
         label="Вид ткани"
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'fabric_types' in self.data:
-            try:
-                fabric_types_ids = self.data.getlist('fabric_types')
-                self.fields['fabric_views'].queryset = FabricView.objects.filter(fabric_type__id__in=fabric_types_ids)
-            except (ValueError, TypeError):
-                pass
-        elif self.initial.get('fabric_types'):
-            self.fields['fabric_views'].queryset = FabricView.objects.filter(fabric_type__in=self.initial['fabri c_types'])
+        # Устанавливаем доступные виды ткани в зависимости от выбранных типов
+        selected_types = self.data.getlist('fabric_types') if 'fabric_types' in self.data else self.initial.get('fabric_types')
+        if selected_types:
+            self.fields['fabric_views'].queryset = FabricView.objects.filter(fabric_type__id__in=selected_types)
+
+        # Устанавливаем выбранные значения для видов тканей, если они были переданы
+        selected_views = self.data.getlist('fabric_views') if 'fabric_views' in self.data else self.initial.get('fabric_views')
+        if selected_views:
+            self.fields['fabric_views'].initial = selected_views
+        # Динамическое обновление fabric_views в зависимости от выбранных fabric_types
+        # if 'fabric_types' in self.data:
+        #     try:
+        #         fabric_types_ids = self.data.getlist('fabric_types')
+        #         self.fields['fabric_views'].queryset = FabricView.objects.filter(fabric_type__id__in=fabric_types_ids)
+        #     except (ValueError, TypeError):
+        #         # self.fields['fabric_views'].queryset = FabricView.objects.none()
+        #         pass
+        # elif self.initial.get('fabric_types'):
+        #     self.fields['fabric_views'].queryset = FabricView.objects.filter(fabric_type__in=self.initial['fabric_types'])
 
 
 class FabricEditForm(forms.ModelForm):
