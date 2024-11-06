@@ -54,14 +54,13 @@ def get_fabric_views_ajax(request):
     if request.method == "POST":
         data = json.loads(request.body)
         fabric_type_ids = data.get("fabric_types", [])
-        
-        # Получаем виды, связанные с выбранными типами
-        fabric_views = FabricView.objects.filter(fabric_type__id__in=fabric_type_ids).distinct()
-        
-        # Подготавливаем данные для отправки в формате JSON
-        views_data = [{"id": view.id, "name": view.name} for view in fabric_views]
-        
-        return JsonResponse({"views": views_data})
+        data = {}
+        for fabric_type in FabricType.objects.filter(id__in=fabric_type_ids):
+            views_data = FabricView.objects.filter(fabric_type__name=fabric_type.name)
+            # Добавляем каждый тип ткани в словарь, где ключ - это название типа, а значение - список видов
+            data[fabric_type.name] = list(views_data.values('id', 'name'))
+        print((data))
+        return JsonResponse({"views": data})
 
     return JsonResponse({"views": []})
 
@@ -70,7 +69,7 @@ class FabricDeleteView(View):
     def post(self, request, pk, *args, **kwargs):
         fabric = get_object_or_404(Fabric, pk=pk)
         fabric.delete()  # Это вызовет переопределённый метод delete
-        return redirect(reverse('home'))
+        return redirect(reverse('fabric_inventory:home'))
 
 
 class FabricEditView(UpdateView):
@@ -78,7 +77,7 @@ class FabricEditView(UpdateView):
     form_class = FabricEditForm
     template_name = 'fabric_inventory/fabric_edit.html'
     context_object_name = 'fabric'
-    success_url = reverse_lazy('home')
+    success_url = reverse_lazy('fabric_inventory:home')
     
     def form_valid(self, form):
         return super().form_valid(form)
@@ -166,7 +165,7 @@ class CustomLogoutView(LogoutView):
     def dispatch(self, request, *args, **kwargs):
         logout(request)
         request.session.flush()
-        return redirect('home')
+        return redirect('fabric_inventory:home')
     
 
 @csrf_exempt
@@ -205,12 +204,12 @@ def upload_fabric_image(request):
             fabric.image.save(f"{title}.png", ContentFile(image_data), save=True)
 
             return JsonResponse({'success': 'Изображение успешно загружено',
-                                 'redirect_url': reverse('home')})
+                                 'redirect_url': reverse('fabric_inventory:home')})
         else:
             return JsonResponse({'error': 'Что-то пошло не так. Изображение не было загружено'})
     else:
         return JsonResponse({'error': 'Пользователь не авторизован.',
-                             'redirect_url': reverse('login')})
+                             'redirect_url': reverse('fabric_inventory:login')})
         
 
 
