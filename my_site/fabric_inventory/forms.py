@@ -13,20 +13,6 @@ class CustomLoginForm(AuthenticationForm):
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Введите ваш пароль'})
     )
 
-# class FabricFilterForm(forms.Form):
-#     status = forms.ChoiceField(
-#         required=False,
-#         choices=[('', 'Все'), ('available', 'В наличии'), ('used', 'Использована')],
-#         label="Статус",
-#         widget=forms.Select(attrs={'class': 'form-select'})
-#     )
-#     fabric_type = forms.ModelChoiceField(
-#         queryset=FabricType.objects.all(),
-#         required=False,
-#         label="Тип ткани",
-#         widget=forms.Select(attrs={'class': 'form-select'})
-#     )
-
 
 class FabricFilterForm(forms.Form):
     status = forms.ChoiceField(
@@ -39,14 +25,17 @@ class FabricFilterForm(forms.Form):
         queryset=FabricType.objects.all(),
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input me-2 fabric-type'}),
         required=False,
-        label="Тип ткани"
+        label="Тип материала"
     )
     fabric_views = forms.ModelMultipleChoiceField(
         queryset=FabricView.objects.none(),
         widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input me-2 fabric-view'}),
         required=False,
-        label="Вид ткани"
+        label="Вид материала"
     )
+    def clean_status(self):
+        status = self.cleaned_data.get('status', '')
+        return status.strip()  # Убираем пробелы в начале и в конце
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -74,4 +63,15 @@ class FabricFilterForm(forms.Form):
 class FabricEditForm(forms.ModelForm):
     class Meta:
         model = Fabric
-        fields = ['title', 'fabric_type', 'status', 'area']
+        fields = ['title', 'fabric_type', 'status', 'area', 'fabric_view']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Добавляем пустую опцию для поля fabric_view
+        self.fields['fabric_view'].queryset = FabricView.objects.none()  # Изначально пусто
+        if 'fabric_type' in self.data:
+            try:
+                fabric_type_id = int(self.data.get('fabric_type'))
+                self.fields['fabric_view'].queryset = FabricView.objects.filter(fabric_type_id=fabric_type_id)
+            except (ValueError, TypeError):
+                pass

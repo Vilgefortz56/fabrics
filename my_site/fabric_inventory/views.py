@@ -1,13 +1,12 @@
 import json
 from datetime import datetime
 from typing import Any
-from collections import defaultdict
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView, LogoutView
 from django.views import View
 from django.views.generic import ListView, UpdateView
-from django.contrib.auth.models import AnonymousUser
 from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -18,7 +17,6 @@ from .forms import CustomLoginForm, FabricFilterForm, FabricEditForm
 from .models import Fabric, FabricType, FabricView
 from django.views.decorators.csrf import csrf_exempt
 import base64
-import os
 from django.conf import settings
 
 
@@ -44,6 +42,12 @@ def home_page(request):
 
     return render(request, 'fabric_inventory/home.html')
 
+@csrf_exempt
+def get_fabric_views(request, fabric_type_id):
+    fabric_views = FabricView.objects.filter(fabric_type_id=fabric_type_id)
+    data = [{'id': fabric_view.id, 'name': fabric_view.name} for fabric_view in fabric_views]
+    return JsonResponse(data, safe=False)
+
 # def get_fabric_views_ajax(request):
 #     fabric_types = request.GET.getlist('fabric_types[]')
 #     views = FabricView.objects.filter(fabric_type__id__in=fabric_types).values('id', 'name')
@@ -65,14 +69,14 @@ def get_fabric_views_ajax(request):
     return JsonResponse({"views": []})
 
 
-class FabricDeleteView(View):
+class FabricDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk, *args, **kwargs):
         fabric = get_object_or_404(Fabric, pk=pk)
         fabric.delete()  # Это вызовет переопределённый метод delete
         return redirect(reverse('fabric_inventory:home'))
 
 
-class FabricEditView(UpdateView):
+class FabricEditView(LoginRequiredMixin, UpdateView):
     model = Fabric
     form_class = FabricEditForm
     template_name = 'fabric_inventory/fabric_edit.html'
@@ -126,10 +130,10 @@ class FabricsHome(ListView):
     def get_paginate_by(self, queryset):
         # Получаем значение параметра per_page из запроса
         try:
-            per_page = self.request.GET.get('per_page', 20)  # Значение по умолчанию 6
+            per_page = self.request.GET.get('per_page', 2)  # Значение по умолчанию 6
             return int(per_page)  # Преобразуем в int
         except TypeError and ValueError:
-            per_page = 20
+            per_page = 2
             return int(per_page)
 
     def get_filter_form(self):
@@ -138,9 +142,43 @@ class FabricsHome(ListView):
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         per_page = self.request.GET.get('per_page')
-        context['form'] = self.get_filter_form()
-        context['title'] = 'Список тканей'
-        context['per_page'] = per_page
+
+        form = self.get_filter_form()
+        
+        # Получаем выбранные типы и виды для передачи в шаблон
+        selected_fabric_types = form.data.getlist('fabric_types')
+        selected_fabric_views = form.data.getlist('fabric_views')
+
+        # Создаем структуру для отображения подписей
+        views_by_type = {}
+        for fabric_type in FabricType.objects.filter(id__in=selected_fabric_types):
+            views_data = FabricView.objects.filter(fabric_type=fabric_type)
+            views_by_type[fabric_type.name] = views_data
+         # Получаем параметры фильтров
+        # filter_params = {}
+        filter_params = {k: v.strip() for k, v in self.request.GET.items() if v}
+        # for key, value in self.request.GET.items():
+        #     if isinstance(value, list):
+        #         filter_params[key] = [v.strip() for v in value]
+        #     else:
+        #         filter_params[key] = value.strip()
+        # for key, value in self.request.GET.lists():
+        #     if key not in ['page']:  # Исключаем только параметр страницы
+        #         filter_params[key] = value
+
+        print(filter_params.items())
+        context.update({
+            'form': form,
+            'title': 'Список тканей',
+            'per_page': per_page,
+            'selected_fabric_types': selected_fabric_types,
+            'selected_fabric_views': selected_fabric_views,
+            'views_by_type': views_by_type,
+            'filter_params': filter_params
+        })
+        # context['form'] = self.get_filter_form()
+        # context['title'] = 'Список тканей'
+        # context['per_page'] = per_page
         return context
 
 class LoginUser(LoginView):
@@ -169,6 +207,7 @@ class CustomLogoutView(LogoutView):
     
 
 @csrf_exempt
+@login_required
 def upload_fabric_image(request):
     if request.user.is_authenticated:
         user = request.user  # Авторизованный пользователь

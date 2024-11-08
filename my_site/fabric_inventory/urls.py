@@ -8,6 +8,7 @@ app_name = 'fabric_inventory'
 urlpatterns = [
     # path('', views.home_page, name='home'),
     path('', views.FabricsHome.as_view(), name='home'),
+    path('get_fabric_views/<int:fabric_type_id>/', views.get_fabric_views, name='get_fabric_views'),
     path('get-fabric-views/', views.get_fabric_views_ajax, name='get_fabric_views_ajax'),
     path('add-fabric', views.add_fabric_page, name='add_fabric'),
     path('upload-image', views.upload_fabric_image, name='upload_image'),

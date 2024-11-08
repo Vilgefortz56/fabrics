@@ -19,6 +19,17 @@
                         {% endfor %}
                     </select>
                 </div>
+                <!-- Вид ткани -->
+                <div class="col-md-3">
+                    <label for="fabric_type" class="form-label">Вид ткани:</label>
+                    <select name="fabric_view" id="fabric_view" class="form-select">
+                        {% for choice in form.fabric_view.field.choices %}
+                            <option value="{{ choice.0 }}" {% if choice.0 == fabric.fabric_view.id %} selected="selected" {% endif %}>
+                                {{ choice.1 }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div> 
                 <!-- Статус -->
                 <div class="col-md-3">
                     <label for="status" class="form-label">Статус:</label>
@@ -97,6 +108,35 @@
     // Сохранение данных canvas в скрытое поле перед отправкой формы
     document.querySelector('form').addEventListener('submit', function() {
         canvasDataElement.value = JSON.stringify(canvas.toJSON());
+    });
+</script>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const fabricTypeSelect = document.querySelector('[name="fabric_type"]');
+        const fabricViewSelect = document.querySelector('[name="fabric_view"]');
+
+        fabricTypeSelect.addEventListener('change', function () {
+            const fabricTypeId = this.value;
+            if (fabricTypeId) {
+                // Отправляем AJAX запрос для получения соответствующих видов ткани
+                fetch(`/get_fabric_views/${fabricTypeId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        fabricViewSelect.innerHTML = ''; // Очистить существующие опции
+                        data.forEach(function (fabricView) {
+                            const option = document.createElement('option');
+                            option.value = fabricView.id;
+                            option.text = fabricView.name;
+                            fabricViewSelect.appendChild(option);
+                        });
+                    });
+            }
+        });
+
+        // Если страница уже была загружена с выбранным типом ткани
+        if (fabricTypeSelect.value) {
+            fabricTypeSelect.dispatchEvent(new Event('change'));
+        }
     });
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
