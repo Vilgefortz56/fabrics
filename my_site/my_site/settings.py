@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'fabric_inventory',
+    'spurl',
 ]
 
 AUTH_USER_MODEL = 'fabric_inventory.CustomUser'

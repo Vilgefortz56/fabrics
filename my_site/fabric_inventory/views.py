@@ -124,7 +124,7 @@ class FabricsHome(ListView):
             fabric_views = form.cleaned_data.get('fabric_views')
             if fabric_views:
                 queryset = queryset.filter(fabric_view__in=fabric_views)
-        
+        self.queryset = queryset
         return queryset
 
     def get_paginate_by(self, queryset):
@@ -156,7 +156,7 @@ class FabricsHome(ListView):
             views_by_type[fabric_type.name] = views_data
          # Получаем параметры фильтров
         # filter_params = {}
-        filter_params = {k: v.strip() for k, v in self.request.GET.items() if v}
+        # filter_params = {k: v.strip() for k, v in self.request.GET.items() if v}
         # for key, value in self.request.GET.items():
         #     if isinstance(value, list):
         #         filter_params[key] = [v.strip() for v in value]
@@ -165,8 +165,12 @@ class FabricsHome(ListView):
         # for key, value in self.request.GET.lists():
         #     if key not in ['page']:  # Исключаем только параметр страницы
         #         filter_params[key] = value
+                # Копируем GET параметры, чтобы сохранить фильтры на каждой странице
+        filter_params = self.request.GET.copy()
 
-        print(filter_params.items())
+        # Убираем параметр `page` для чистоты данных, чтобы избежать его повторного добавления
+        # filter_params.pop('page', None)
+        print(filter_params)
         context.update({
             'form': form,
             'title': 'Список тканей',
@@ -174,7 +178,7 @@ class FabricsHome(ListView):
             'selected_fabric_types': selected_fabric_types,
             'selected_fabric_views': selected_fabric_views,
             'views_by_type': views_by_type,
-            'filter_params': filter_params
+            'filter_params': filter_params.urlencode()
         })
         # context['form'] = self.get_filter_form()
         # context['title'] = 'Список тканей'

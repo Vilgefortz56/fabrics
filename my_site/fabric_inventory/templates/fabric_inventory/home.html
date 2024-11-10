@@ -2,7 +2,7 @@
 {% load static %}
 {% block title %} {{fabrics.title}} {% endblock %}
 {% block content %}
-{% load utils %}
+{% load spurl %}
 
 <main class="container-float mt-3">
     
@@ -138,62 +138,57 @@
             <!-- Пагинация -->
             <nav aria-label="Page navigation">
                 <ul class="pagination justify-content-center mt-3">
-                    {% if page_obj.has_previous %}
+                    <!-- Кнопка перехода на первую страницу -->
+                    {% if page_obj.number > 5 %}
                         <li class="page-item">
-                            <a class="page-link text-secondary" href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}{% for filter_name, filter_value in filter_params.items %}
-                                {% if filter_name != 'page' and filter_name != 'per_page' %}
-                                    {% if filter_name == 'fabric_types' or filter_name == 'fabric_views' %}
-                                        {% for value in filter_value %}
-                                            &{{ filter_name }}={{ value.strip|urlencode }}
-                                        {% endfor %}
-                                    {% else %}
-                                        &{{ filter_name }}={{ filter_value.strip|urlencode }}
-                                    {% endif %}
-                                {% endif %}
-                            {% endfor %}">Предыдущая</a>
+                            <a class="page-link text-secondary" href="{% spurl query=request.GET set_query='page=1' %}">
+                                Первая
+                            </a>
                         </li>
                     {% endif %}
-            
+                    <!-- Кнопка предыдущей страницы -->
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link text-secondary" href="{% spurl query=request.GET set_query='page={{ page_obj.previous_page_number }}' %}">
+                                Предыдущая
+                            </a>
+                        </li>
+                    {% endif %}
+                    <!-- Отображение максимум 8 страниц вокруг текущей -->
                     {% for page_num in page_obj.paginator.page_range %}
-                    <li class="page-item {% if page_obj.number == page_num %}active{% endif %}">
-                        <a class="page-link text-secondary {% if page_obj.number == page_num %}bg-secondary text-white border-secondary{% endif %}"
-                           href="?page={{ page_num }}{% if per_page %}&per_page={{ per_page }}{% endif %}
-                           {% for key, values in filter_params.items %}
-                               {% if values|is_list %}
-                                   {% for value in values %}
-                                       &{{ key }}={{ value.strip|urlencode }}
-                                   {% endfor %}
-                               {% else %}
-                                   &{{ key }}={{ values.strip|urlencode }}
-                               {% endif %}
-                           {% endfor %}">
-                            {{ page_num }}
-                        </a>
-                    </li>
-                {% endfor %}
-            
+                        {% if page_num == page_obj.number %}
+                            <!-- Текущая страница -->
+                            <li class="page-item active">
+                                <a class="page-link text-white bg-secondary border-secondary">{{ page_num }}</a>
+                            </li>
+                        {% elif page_num >= page_obj.number|add:-4 and page_num <= page_obj.number|add:3 %}
+                            <!-- Показать страницы в диапазоне от текущей страницы - 4 до текущей страницы + 3 -->
+                            <li class="page-item">
+                                <a class="page-link text-secondary" href="{% spurl query=request.GET set_query='page={{ page_num }}' %}">{{ page_num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    <!-- Кнопка следующей страницы -->
                     {% if page_obj.has_next %}
                         <li class="page-item">
-                            <a class="page-link text-secondary" href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}{% for filter_name, filter_value in filter_params.items %}
-                                {% if filter_name != 'page' and filter_name != 'per_page' %}
-                                    {% if filter_name == 'fabric_types' or filter_name == 'fabric_views' %}
-                                        {% for value in filter_value %}
-                                            &{{ filter_name }}={{ value.strip|urlencode }}
-                                        {% endfor %}
-                                    {% else %}
-                                        &{{ filter_name }}={{ filter_value.strip|urlencode }}
-                                    {% endif %}
-                                {% endif %}
-                            {% endfor %}">Следующая</a>
+                            <a class="page-link text-secondary" href="{% spurl query=request.GET set_query='page={{ page_obj.next_page_number }}' %}">
+                                Следующая
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    <!-- Кнопка перехода на последнюю страницу -->
+                    {% if page_obj.number < page_obj.paginator.num_pages|add:-4 %}
+                        <li class="page-item">
+                            <a class="page-link text-secondary" href="{% spurl query=request.GET set_query='page={{ page_obj.paginator.num_pages }}' %}">
+                                Последняя
+                            </a>
                         </li>
                     {% endif %}
                 </ul>
             </nav>
-            {% endif %}
-            
-            
-            
-            
+            {% endif %}     
         </div>
     </div>
 </main>
