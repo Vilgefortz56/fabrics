@@ -54,7 +54,7 @@ function drawGrid() {
     }
 
     // Отправляем сетку на задний план
-    canvas.sendToBack(...canvas.getObjects('gridLine'));
+    // canvas.sendToBack(canvas.getObjects('gridLine'));
 }
 
 // Начальное рисование сетки
@@ -731,7 +731,7 @@ function sendCroppedImageToServer() {
         format: 'png',
         multiplier: 1 // Множитель для увеличения разрешения
     });
-    // let canvasData = canvas.toJSON();
+    let canvasData = canvas.toJSON();
     // console.log(canvasData);
     const selectElement = document.getElementById('categorySelect');
     // Получаем CSRF-токен
@@ -749,7 +749,7 @@ function sendCroppedImageToServer() {
                             status: 'available',
                             fabrictype_id: parseInt(selectElement.value),
                             fabricview_id: parseInt(document.getElementById('viewSelect').value),
-                            // canvas_data: canvasData,
+                            canvas_data: JSON.stringify(canvasData),
                             })
     })
     .then(response => response.json())

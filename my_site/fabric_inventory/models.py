@@ -50,14 +50,14 @@ def user_directory_path(instance: CustomUser, filename):
     return f'user_{instance.user.username}/{datetime.now().strftime("%Y-%m-%d")}/{filename}'
 
 class Fabric(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.SET_DEFAULT, default='Anonymous', verbose_name='Пользователь')
+    user = models.ForeignKey(CustomUser, on_delete=models.SET_DEFAULT, default='Anonymous', verbose_name='Пользователь', blank=True, null=True)
     title = models.CharField(max_length=100, blank=True, null=True, verbose_name='Название')
     image = models.ImageField(upload_to=user_directory_path, height_field=None, width_field=None, max_length=None, 
                               blank=True, null=True, verbose_name='Изображение')
-    # canvas_data = models.JSONField(blank=True, null=True, verbose_name='Данные ткани')
+    canvas_data = models.JSONField(blank=True, null=True, verbose_name='Данные ткани')
     area = models.FloatField(blank=True, null=True, verbose_name='Площадь')
-    fabric_view = models.ForeignKey(FabricView, on_delete=models.CASCADE, default=None, verbose_name='Вид ткани')
-    fabric_type = models.ForeignKey(FabricType, on_delete=models.CASCADE, default=None, verbose_name='Тип ткани')
+    fabric_view = models.ForeignKey(FabricView, on_delete=models.CASCADE, default=None, verbose_name='Вид ткани', blank=True, null=True)
+    fabric_type = models.ForeignKey(FabricType, on_delete=models.CASCADE, default=None, verbose_name='Тип ткани', blank=True, null=True)
     date_added = models.DateTimeField(auto_now_add=True, verbose_name='Дата добавления')
     date_updated = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
     status = models.CharField(max_length=20, choices=[

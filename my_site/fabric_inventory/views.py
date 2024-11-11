@@ -90,7 +90,9 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
     def get_object(self):
         pk = self.kwargs.get('pk')  # Получаем pk из URL
         print(pk)
-        print(get_object_or_404(Fabric, pk=pk).area)
+        #print(get_object_or_404(Fabric, pk=pk).area)
+        obj = get_object_or_404(Fabric, pk=pk)
+        print(obj.canvas_data)
         return get_object_or_404(Fabric, pk=pk)  # Возвращаем объект или 404
     
     def get_context_data(self, **kwargs):
@@ -154,23 +156,7 @@ class FabricsHome(ListView):
         for fabric_type in FabricType.objects.filter(id__in=selected_fabric_types):
             views_data = FabricView.objects.filter(fabric_type=fabric_type)
             views_by_type[fabric_type.name] = views_data
-         # Получаем параметры фильтров
-        # filter_params = {}
-        # filter_params = {k: v.strip() for k, v in self.request.GET.items() if v}
-        # for key, value in self.request.GET.items():
-        #     if isinstance(value, list):
-        #         filter_params[key] = [v.strip() for v in value]
-        #     else:
-        #         filter_params[key] = value.strip()
-        # for key, value in self.request.GET.lists():
-        #     if key not in ['page']:  # Исключаем только параметр страницы
-        #         filter_params[key] = value
-                # Копируем GET параметры, чтобы сохранить фильтры на каждой странице
         filter_params = self.request.GET.copy()
-
-        # Убираем параметр `page` для чистоты данных, чтобы избежать его повторного добавления
-        # filter_params.pop('page', None)
-        print(filter_params)
         context.update({
             'form': form,
             'title': 'Список тканей',
@@ -224,7 +210,7 @@ def upload_fabric_image(request):
         status = body_data.get('status')
         fabrictype_id = int(body_data.get('fabrictype_id'))
         fabricview_id = body_data.get('fabricview_id')
-        # canvas_data = body_data.get('canvas_data')
+        canvas_data = body_data.get('canvas_data')
         # print(canvas_data)
         fabrictype_instance = FabricType.objects.get(pk=fabrictype_id)
         if fabricview_id is None:    
@@ -242,7 +228,7 @@ def upload_fabric_image(request):
                 status=status,
                 fabric_type = fabrictype_instance,
                 fabric_view = fabricview_instance,
-                # canvas_data = canvas_data,
+                canvas_data = canvas_data,
             )
             fabric.image.save(f"{title}.png", ContentFile(image_data), save=True)
 

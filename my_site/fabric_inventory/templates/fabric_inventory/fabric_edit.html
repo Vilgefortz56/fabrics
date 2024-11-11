@@ -51,7 +51,8 @@
                     <button type="submit" class="btn btn-secondary h-100">Сохранить</button>
                 </div>
             </div>
-        <input type="hidden" id="canvasData" name="canvas_data" value="{{ fabric.image.url }}">
+        {% comment %} <input type="hidden" id="canvasData" name="canvas_data" value="{{ fabric.image.url }}"> {% endcomment %}
+        <input type="hidden" id="canvasData" name="canvas_data" value="{{ fabric.canvas_data }}">
 
         <div class="mb-3 mt-3">
             <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
@@ -68,6 +69,32 @@
     let canvasHeight = canvas.getHeight();
     {% comment %} canvas.clear(); {% endcomment %}
     // Восстановление canvas из JSON
+    function loadCanvas() {
+        const canvasData = document.getElementById('canvasData');
+        console.log("kek", canvasData);
+        if (canvasData) {
+            //canvas.loadFromJSON(JSON.parse(canvasData), canvas.renderAll.bind(canvas));
+            canvas.loadFromJSON(JSON.parse(canvasData), canvas.renderAll.bind(canvas), function(o, object) {
+               console.log('Loaded object:', object);
+               setTimeout(() => {
+                    canvas.renderAll(); // Обновляем отображение после загрузки
+                }, 50); // Задержка в 50 мс
+               });
+            canvas.renderAll();
+            //alert("Drawing loaded!");
+        } else {
+            alert("No saved drawing found.");
+        }
+        setTimeout(100);
+        canvas.renderAll();
+    }
+
+    function renderCanvas() {
+        setTimeout(100);
+        canvas.renderAll();
+    }
+
+
     let canvasDataElement = document.getElementById('canvasData');
     console.log('img', canvasDataElement);
     fabric.Image.fromURL(canvasDataElement.value, function(img) {
