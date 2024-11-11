@@ -92,12 +92,13 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
         print(pk)
         #print(get_object_or_404(Fabric, pk=pk).area)
         obj = get_object_or_404(Fabric, pk=pk)
-        print(obj.canvas_data)
+        print("Во вьюхе",type(obj.canvas_data))
         return get_object_or_404(Fabric, pk=pk)  # Возвращаем объект или 404
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['fabric'] = self.get_object()
+        print("Во вьюхе_2",type(context['fabric'].canvas_data))
         return context
     
     
@@ -211,7 +212,7 @@ def upload_fabric_image(request):
         fabrictype_id = int(body_data.get('fabrictype_id'))
         fabricview_id = body_data.get('fabricview_id')
         canvas_data = body_data.get('canvas_data')
-        # print(canvas_data)
+        print("При записе",type(canvas_data))
         fabrictype_instance = FabricType.objects.get(pk=fabrictype_id)
         if fabricview_id is None:    
             # fabricview_instance = FabricView.objects.get(pk=1)

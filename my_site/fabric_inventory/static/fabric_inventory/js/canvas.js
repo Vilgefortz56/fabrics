@@ -749,7 +749,7 @@ function sendCroppedImageToServer() {
                             status: 'available',
                             fabrictype_id: parseInt(selectElement.value),
                             fabricview_id: parseInt(document.getElementById('viewSelect').value),
-                            canvas_data: JSON.stringify(canvasData),
+                            canvas_data: canvasData,
                             })
     })
     .then(response => response.json())

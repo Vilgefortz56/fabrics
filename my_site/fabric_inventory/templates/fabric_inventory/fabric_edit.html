@@ -56,6 +56,9 @@
 
         <div class="mb-3 mt-3">
             <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
+            <div class="mt-3">
+                {{fabric.canvas_data}}
+            </div>
         </div>
 
         
@@ -64,17 +67,20 @@
 
 <script>
     let canvas = new fabric.Canvas('canvas');
+    console.log('Привет');
     // Получение размеров canvas
     let canvasWidth = canvas.getWidth();
     let canvasHeight = canvas.getHeight();
     {% comment %} canvas.clear(); {% endcomment %}
     // Восстановление canvas из JSON
     function loadCanvas() {
-        const canvasData = document.getElementById('canvasData');
+        let canvasData = document.getElementById('canvasData');
+        canvasData = canvasData.value;
         console.log("kek", canvasData);
+        //console.log("kek", JSON.parse(canvasData));
         if (canvasData) {
             //canvas.loadFromJSON(JSON.parse(canvasData), canvas.renderAll.bind(canvas));
-            canvas.loadFromJSON(JSON.parse(canvasData), canvas.renderAll.bind(canvas), function(o, object) {
+            canvas.loadFromJSON(canvasData, canvas.renderAll.bind(canvas), function(o, object) {
                console.log('Loaded object:', object);
                setTimeout(() => {
                     canvas.renderAll(); // Обновляем отображение после загрузки
@@ -95,7 +101,7 @@
     }
 
 
-    let canvasDataElement = document.getElementById('canvasData');
+    {% comment %} let canvasDataElement = document.getElementById('canvasData');
     console.log('img', canvasDataElement);
     fabric.Image.fromURL(canvasDataElement.value, function(img) {
         img.scaleToWidth(canvasWidth);
@@ -118,7 +124,7 @@
     
         // Перерисовка canvas
         canvas.renderAll();
-    })
+    }) {% endcomment %}
     {% comment %} let canvasData = canvasDataElement.value; {% endcomment %}
     {% comment %} console.log('canvasDataElement', canvasData); {% endcomment %}
     //if (canvasData) {
@@ -131,7 +137,10 @@
         //    console.log('Объект загружен:', object);
         //});
     //}
-
+    // Загрузка сохраненного рисунка при загрузке страницы
+    //document.addEventListener("DOMContentLoaded", loadCanvas);
+    //setTimeout(100);
+    //document.addEventListener("DOMContentLoaded", renderCanvas);
     // Сохранение данных canvas в скрытое поле перед отправкой формы
     document.querySelector('form').addEventListener('submit', function() {
         canvasDataElement.value = JSON.stringify(canvas.toJSON());
@@ -142,6 +151,9 @@
         const fabricTypeSelect = document.querySelector('[name="fabric_type"]');
         const fabricViewSelect = document.querySelector('[name="fabric_view"]');
 
+        loadCanvas();
+        setTimeout(100);
+        renderCanvas();
         fabricTypeSelect.addEventListener('change', function () {
             const fabricTypeId = this.value;
             if (fabricTypeId) {
