@@ -198,23 +198,6 @@
         const typeCheckboxes = document.querySelectorAll(".fabric-type");
         const viewContainer = document.getElementById("view-container");
         
-        /*const type_container = document.getElementById("type-container");
-        const types_label = document.createElement("h5");
-        types_label.textContent = {{ form.fabric_types.label }};
-        for (let i = 0; i < {{ form.fabric_types|length }}; i++) {
-            let checkbox_type = document.createElement("div");
-            checkbox_type.classList.add("form-check");
-            let checkbox_input = document.createElement("input");
-            checkbox_input.classList.add("form-check-input");
-            checkbox_input.setAttribute("type", "checkbox");
-            checkbox_input.setAttribute("name", "fabric_types");
-            checkbox_input.setAttribute("value", {{ form.fabric_types|slice:"i:i"}});
-            checkbox_type.appendChild(checkbox_input);
-            let checkbox_label = document.createElement("label");
-            checkbox_label.classList.add("form-check-label");
-            checkbox_label.textContent = {{ form.fabric_types|slice:"i:i" }};
-        }*/
-
         function updateFabricViews(selectedTypes) {
             fetch("{% url 'fabric_inventory:get_fabric_views_ajax' %}", {
                 method: "POST",

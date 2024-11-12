@@ -732,7 +732,7 @@ function sendCroppedImageToServer() {
         multiplier: 1 // Множитель для увеличения разрешения
     });
     let canvasData = canvas.toJSON();
-    // console.log(canvasData);
+    console.log(canvasData);
     const selectElement = document.getElementById('categorySelect');
     // Получаем CSRF-токен
     const csrftoken = getCSRFToken();

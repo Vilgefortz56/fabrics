@@ -52,16 +52,11 @@
                 </div>
             </div>
         {% comment %} <input type="hidden" id="canvasData" name="canvas_data" value="{{ fabric.image.url }}"> {% endcomment %}
-        <input type="hidden" id="canvasData" name="canvas_data" value="{{ fabric.canvas_data }}">
-
+        {% comment %} <input type="hidden" id="canvasData" name="canvas_data" value="{{ fabric.canvas_data|json_script:"lol" }}"> {% endcomment %}
+        {{ fabric.canvas_data|json_script:"canvas-data" }}
         <div class="mb-3 mt-3">
             <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
-            <div class="mt-3">
-                {{fabric.canvas_data}}
-            </div>
         </div>
-
-        
     </form>
 </main>
 
@@ -71,88 +66,92 @@
     // Получение размеров canvas
     let canvasWidth = canvas.getWidth();
     let canvasHeight = canvas.getHeight();
-    {% comment %} canvas.clear(); {% endcomment %}
     // Восстановление canvas из JSON
     function loadCanvas() {
-        let canvasData = document.getElementById('canvasData');
-        canvasData = canvasData.value;
-        console.log("kek", canvasData);
-        //console.log("kek", JSON.parse(canvasData));
+        //let canvasData = document.getElementById('canvasData');
+        let canvasData = document.getElementById('canvas-data').textContent;
+        //canvasData = canvasData.value;
+        console.log(canvasData);
+        console.log("kek", JSON.parse(canvasData));
         if (canvasData) {
-            //canvas.loadFromJSON(JSON.parse(canvasData), canvas.renderAll.bind(canvas));
-            canvas.loadFromJSON(canvasData, canvas.renderAll.bind(canvas), function(o, object) {
-               console.log('Loaded object:', object);
-               setTimeout(() => {
-                    canvas.renderAll(); // Обновляем отображение после загрузки
-                }, 50); // Задержка в 50 мс
-               });
-            canvas.renderAll();
-            //alert("Drawing loaded!");
+            //canvas.loadFromJSON(JSON.parse(canvasData), canvas.renderAll.bind(canvas)); 
+            canvas.loadFromJSON(JSON.parse(canvasData), canvas.renderAll.bind(canvas));
         } else {
             alert("No saved drawing found.");
         }
-        setTimeout(100);
-        canvas.renderAll();
     }
 
     function renderCanvas() {
-        setTimeout(100);
         canvas.renderAll();
     }
-
-
-    {% comment %} let canvasDataElement = document.getElementById('canvasData');
-    console.log('img', canvasDataElement);
-    fabric.Image.fromURL(canvasDataElement.value, function(img) {
-        img.scaleToWidth(canvasWidth);
-        img.scaleToHeight(canvasHeight);
-        img.set({
-            left: 0,
-            top: 0,
-            selectable: false,   // Отключаем возможность выбора
-            hasControls: false,  // Отключаем контролы для изменения размеров
-            hasBorders: false,   // Отключаем рамки при выборе
-            lockMovementX: true, // Блокируем движение по оси X
-            lockMovementY: true, // Блокируем движение по оси Y
-            lockScalingX: true,  // Блокируем масштабирование по оси X
-            lockScalingY: true,  // Блокируем масштабирование по оси Y
-            lockRotation: true   // Блокируем вращение
-        });
-    
-        // Добавление изображения на canvas
-        canvas.add(img);
-    
-        // Перерисовка canvas
-        canvas.renderAll();
-    }) {% endcomment %}
-    {% comment %} let canvasData = canvasDataElement.value; {% endcomment %}
-    {% comment %} console.log('canvasDataElement', canvasData); {% endcomment %}
-    //if (canvasData) {
-      //  console.log('canvasDataElement', canvasData);
-      //  canvas.loadFromJSON(JSON.stringify(canvasData), canvas.renderAll.bind(canvas));//function() {
-            // Перерисовываем холст после загрузки всех объектов
-            //canvas.renderAll();
-            //console.log('Объекты загружены:');
-        // function(o, object) {
-        //    console.log('Объект загружен:', object);
-        //});
-    //}
-    // Загрузка сохраненного рисунка при загрузке страницы
-    //document.addEventListener("DOMContentLoaded", loadCanvas);
-    //setTimeout(100);
-    //document.addEventListener("DOMContentLoaded", renderCanvas);
-    // Сохранение данных canvas в скрытое поле перед отправкой формы
     document.querySelector('form').addEventListener('submit', function() {
         canvasDataElement.value = JSON.stringify(canvas.toJSON());
     });
+    document.addEventListener("DOMContentLoaded", loadCanvas);
+    //setTimeout(100);
+    document.addEventListener("DOMContentLoaded", renderCanvas);
+    document.addEventListener('DOMContentLoaded', function () {
+        const fabricTypeSelect = document.querySelector('[name="fabric_type"]');
+        const fabricViewSelect = document.querySelector('[name="fabric_view"]');
+        fabricTypeSelect.addEventListener('change', function () {
+            const fabricTypeId = this.value;
+            if (fabricTypeId) {
+                // Отправляем AJAX запрос для получения соответствующих видов ткани
+                fetch(`/get_fabric_views/${fabricTypeId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        fabricViewSelect.innerHTML = ''; // Очистить существующие опции
+                        data.forEach(function (fabricView) {
+                            const option = document.createElement('option');
+                            option.value = fabricView.id;
+                            option.text = fabricView.name;
+                            fabricViewSelect.appendChild(option);
+                        });
+                    });
+            }
+        });
+
+        // Если страница уже была загружена с выбранным типом ткани
+        if (fabricTypeSelect.value) {
+            fabricTypeSelect.dispatchEvent(new Event('change'));
+        }
+    });
+    document.querySelector('form').addEventListener('submit', function(event) {
+        event.preventDefault();  // Остановим стандартную отправку формы
+        
+        const canvas = new fabric.Canvas('canvas');
+        const canvasData = JSON.stringify(canvas.toJSON());  // Преобразуем данные canvas в JSON
+
+        // Настраиваем и отправляем POST-запрос с JSON
+        fetch("{% url 'save_canvas_data' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"  // Добавляем CSRF-токен для защиты
+            },
+            body: JSON.stringify({
+                canvas_data: canvasData,
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Canvas данные успешно сохранены!");
+            } else {
+                alert("Произошла ошибка при сохранении данных.");
+            }
+        })
+        .catch(error => console.error("Ошибка:", error));
+    });
+
 </script>
-<script type="text/javascript">
+{% comment %} <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
         const fabricTypeSelect = document.querySelector('[name="fabric_type"]');
         const fabricViewSelect = document.querySelector('[name="fabric_view"]');
 
         loadCanvas();
-        setTimeout(100);
+        //setTimeout(100);
         renderCanvas();
         fabricTypeSelect.addEventListener('change', function () {
             const fabricTypeId = this.value;
@@ -177,6 +176,6 @@
             fabricTypeSelect.dispatchEvent(new Event('change'));
         }
     });
-</script>
+</script> {% endcomment %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
 {% endblock %}

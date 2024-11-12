@@ -98,7 +98,8 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['fabric'] = self.get_object()
-        print("Во вьюхе_2",type(context['fabric'].canvas_data))
+        # context['fabric'].canvas_data = f"{context['fabric'].canvas_data}"
+        context['fabric'].canvas_data = json.loads(context['fabric'].canvas_data)
         return context
     
     
@@ -212,7 +213,8 @@ def upload_fabric_image(request):
         fabrictype_id = int(body_data.get('fabrictype_id'))
         fabricview_id = body_data.get('fabricview_id')
         canvas_data = body_data.get('canvas_data')
-        print("При записе",type(canvas_data))
+        print("При записе",(canvas_data))
+
         fabrictype_instance = FabricType.objects.get(pk=fabrictype_id)
         if fabricview_id is None:    
             # fabricview_instance = FabricView.objects.get(pk=1)
@@ -229,7 +231,7 @@ def upload_fabric_image(request):
                 status=status,
                 fabric_type = fabrictype_instance,
                 fabric_view = fabricview_instance,
-                canvas_data = canvas_data,
+                canvas_data = json.dumps(canvas_data),
             )
             fabric.image.save(f"{title}.png", ContentFile(image_data), save=True)
 
