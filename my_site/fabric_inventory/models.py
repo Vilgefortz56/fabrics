@@ -65,8 +65,8 @@ class Fabric(models.Model):
         ('used', 'Использована'),
     ], verbose_name='Статус')
 
-    def __str__(self):
-        return self.title
+    # def __str__(self):
+    #     return self.title
 
     def delete(self, *args, **kwargs):
         # Удаляем файл с сервера

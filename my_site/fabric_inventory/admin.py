@@ -40,7 +40,7 @@ class FabricViewAdmin(admin.ModelAdmin):
     list_display = ('name', )
 
 class FabricAdmin(admin.ModelAdmin):
-    list_display = ('title', 'area', 'user', 'status')
+    list_display = ('title', 'area', 'user', 'status',) #'area', 'user', 'status'
 
 
 admin.site.register(FabricView, FabricViewAdmin)

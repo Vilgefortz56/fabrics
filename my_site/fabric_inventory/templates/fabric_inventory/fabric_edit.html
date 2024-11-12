@@ -5,7 +5,7 @@
 
 {% block content %}
 <main class='container mt-2'>
-    <form method="POST"  enctype="multipart/form-data">
+    <form id="fabricEditForm" method="POST"  enctype="multipart/form-data">
         {% csrf_token %}
             <div class="row">
                 <!-- Тип ткани -->
@@ -52,7 +52,8 @@
                 </div>
             </div>
         {% comment %} <input type="hidden" id="canvasData" name="canvas_data" value="{{ fabric.image.url }}"> {% endcomment %}
-        {% comment %} <input type="hidden" id="canvasData" name="canvas_data" value="{{ fabric.canvas_data|json_script:"lol" }}"> {% endcomment %}
+            <input type="hidden" name="edit_image" id="editImage">
+            <input type="hidden" id="canvasData" name="canvas_data" value="">
         {{ fabric.canvas_data|json_script:"canvas-data" }}
         <div class="mb-3 mt-3">
             <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
@@ -60,8 +61,10 @@
     </form>
 </main>
 
-<script>
-    let canvas = new fabric.Canvas('canvas');
+<script src="{% static 'fabric_inventory/js/edit.js' %}">
+{% comment %}<script>
+
+    {% comment %} let canvas = new fabric.Canvas('canvas');
     console.log('Привет');
     // Получение размеров canvas
     let canvasWidth = canvas.getWidth();
@@ -74,7 +77,6 @@
         console.log(canvasData);
         console.log("kek", JSON.parse(canvasData));
         if (canvasData) {
-            //canvas.loadFromJSON(JSON.parse(canvasData), canvas.renderAll.bind(canvas)); 
             canvas.loadFromJSON(JSON.parse(canvasData), canvas.renderAll.bind(canvas));
         } else {
             alert("No saved drawing found.");
@@ -84,8 +86,10 @@
     function renderCanvas() {
         canvas.renderAll();
     }
-    document.querySelector('form').addEventListener('submit', function() {
-        canvasDataElement.value = JSON.stringify(canvas.toJSON());
+    document.querySelector('form').addEventListener('submit', function(event) {
+        console.log("Пост запрос");
+        const canvasData = JSON.stringify(canvas.toJSON());  // Преобразуем данные canvas в JSON
+        document.getElementById('canvasData').value = canvasData;  // Записываем данные в скрытое поле
     });
     document.addEventListener("DOMContentLoaded", loadCanvas);
     //setTimeout(100);
@@ -117,13 +121,28 @@
         }
     });
     document.querySelector('form').addEventListener('submit', function(event) {
-        event.preventDefault();  // Остановим стандартную отправку формы
+        //event.preventDefault();  // Остановим стандартную отправку формы
+        console.log("Пост запрос");
+        const canvas = new fabric.Canvas('canvas');
+        const canvasData = JSON.stringify(canvas.toJSON());  // Преобразуем данные canvas в JSON
+        // Записываем JSON данные canvas в скрытое поле формы
+        document.getElementById('canvasData').value = canvasData;
         
+    }); {% endcomment %}
+
+</script>
+
+{% comment %} <script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        const fabricTypeSelect = document.querySelector('[name="fabric_type"]');
+        const fabricViewSelect = document.querySelector('[name="fabric_view"]');
+
+
         const canvas = new fabric.Canvas('canvas');
         const canvasData = JSON.stringify(canvas.toJSON());  // Преобразуем данные canvas в JSON
 
         // Настраиваем и отправляем POST-запрос с JSON
-        fetch("{% url 'save_canvas_data' %}", {
+        fetch("{% url 'fabric_inventory:save_canvas_data' %}", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -131,6 +150,7 @@
             },
             body: JSON.stringify({
                 canvas_data: canvasData,
+                pk: "{{ fabric.pk }}"
             })
         })
         .then(response => response.json())
@@ -142,13 +162,6 @@
             }
         })
         .catch(error => console.error("Ошибка:", error));
-    });
-
-</script>
-{% comment %} <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        const fabricTypeSelect = document.querySelector('[name="fabric_type"]');
-        const fabricViewSelect = document.querySelector('[name="fabric_view"]');
 
         loadCanvas();
         //setTimeout(100);

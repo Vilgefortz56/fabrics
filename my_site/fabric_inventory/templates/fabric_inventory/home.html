@@ -89,7 +89,8 @@
                     </div>
                     <div class="col">
                         <div class="card border-secondary mb-0" style="max-width: 100%;">
-                            <img src="{{ fabric.image.url }}" class="card-img-top border border-secondary-subtle" alt="{{ fabric.user.username}}">
+                            {% comment %} <img src="{{ fabric.image.url }}" class="card-img-top border border-secondary-subtle" alt="{{ fabric.user.username}}"> {% endcomment %}
+                            <canvas class="card-img-top border border-secondary-subtle" id="canvas-{{ fabric.id }}" data-fabric-id="{{ fabric.id }}"></canvas>
                             <div class="card-body {% if request.user.is_authenticated %} 
                             {% if request.user.is_superuser or request.user.role == 'admin' or request.user.role == 'store'%} mb-0 pb-0 {% endif %} {% endif %}">
                             <h5 class="card-title">Ткань {{ fabric.id }} </h5>
@@ -194,6 +195,18 @@
 </main>
 
 <script>
+    const canvas = new fabric.Canvas('canvas-{{ fabric.id }}');
+    function loadCanvasAsImage(jsonData) {
+        canvas.loadFromJSON(jsonData, function() {
+            // Делаем все объекты на холсте невыбираемыми
+            canvas.forEachObject(obj => obj.selectable = false);
+            
+            // Обновляем холст
+            canvas.renderAll();
+            // Очищаем canvas, чтобы избежать возможности редактирования
+            canvas.clear();
+        });
+    }
     document.addEventListener("DOMContentLoaded", function() {
         const typeCheckboxes = document.querySelectorAll(".fabric-type");
         const viewContainer = document.getElementById("view-container");

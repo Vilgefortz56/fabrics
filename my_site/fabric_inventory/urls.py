@@ -15,5 +15,6 @@ urlpatterns = [
     path('login/', views.LoginUser.as_view(), name='login'),
     path('logout/', views.CustomLogoutView.as_view(next_page='home'), name='logout'),
     path('fabric/<int:pk>/edit/', views.FabricEditView.as_view(), name='fabric_edit'),
+    path('save_canvas_data/', views.save_canvas_data, name='save_canvas_data'),
     path('fabric/<int:pk>/delete/', views.FabricDeleteView.as_view(), name='fabric_delete'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

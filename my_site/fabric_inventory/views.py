@@ -84,6 +84,17 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('fabric_inventory:home')
     
     def form_valid(self, form):
+        canvas_data = self.request.POST.get('canvas_data', None)
+        edit_image = self.request.POST.get('edit_image', None)
+        instance = self.get_object()
+        image_path = instance.image.path
+        if edit_image:
+            image_data = base64.b64decode(edit_image)
+            # instance.image.save(image_path, ContentFile(image_data), save=True)
+            #form.instance.image = edit_image
+        if canvas_data:
+            # Сохраняем данные canvas в поле модели
+            form.instance.canvas_data = canvas_data
         return super().form_valid(form)
     
     # Переопределяем метод для получения объекта по pk
@@ -98,8 +109,7 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['fabric'] = self.get_object()
-        # context['fabric'].canvas_data = f"{context['fabric'].canvas_data}"
-        context['fabric'].canvas_data = json.loads(context['fabric'].canvas_data)
+        # context['fabric'].canvas_data = json.loads(context['fabric'].canvas_data)
         return context
     
     
@@ -244,6 +254,20 @@ def upload_fabric_image(request):
                              'redirect_url': reverse('fabric_inventory:login')})
         
 
+def save_canvas_data(request):
+    if request.method == "POST":
+        try:
+            # Загружаем JSON из тела запроса
+            data = json.loads(request.body)
+            canvas_data = data.get("canvas_data")
+            pk = data.get("pk")
+            # Найдите нужный объект Fabric и сохраните canvas_data
+            fabric = Fabric.objects.get(pk=pk)
+            print(fabric.pk)
+            fabric.canvas_data = canvas_data
+            fabric.save()
 
-   
-
+            return JsonResponse({"success": True})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+    return JsonResponse({"success": False, "error": "Неподдерживаемый метод"})
