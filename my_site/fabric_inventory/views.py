@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+import os
 from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -83,15 +84,33 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
     context_object_name = 'fabric'
     success_url = reverse_lazy('fabric_inventory:home')
     
+
+    def get_initial(self):
+        initial = super().get_initial()
+        # Убедитесь, что значение `area` подставляется корректно
+        initial['area'] = self.get_object().area
+        print(initial)
+        return initial
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # Устанавливаем начальное значение для поля `area` из объекта модели
+        form.fields['area'].initial = self.get_object().area
+        print(form.fields['area'].initial)
+        return form
+
     def form_valid(self, form):
-        canvas_data = self.request.POST.get('canvas_data', None)
-        edit_image = self.request.POST.get('edit_image', None)
-        instance = self.get_object()
+        instance = form.instance
+        canvas_data = form.data['canvas_data'] #self.request.POST.get('canvas_data', None)
+        edit_image = form.data['edit_image'] #self.request.POST.get('edit_image', None)
         image_path = instance.image.path
-        if edit_image:
-            image_data = base64.b64decode(edit_image)
-            # instance.image.save(image_path, ContentFile(image_data), save=True)
-            #form.instance.image = edit_image
+        # Отделяем метаданные base64 и декодируем изображение
+        frmt, imgstr = edit_image.split(';base64,')  
+        img_data = ContentFile(base64.b64decode(imgstr))
+        if os.path.isfile(image_path):
+            with open(image_path, 'wb') as f:
+                f.write(img_data.read())
+            instance.save()  
         if canvas_data:
             # Сохраняем данные canvas в поле модели
             form.instance.canvas_data = canvas_data
@@ -109,6 +128,8 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['fabric'] = self.get_object()
+        # print(context['fabric'].area)
+        # print(type(context['fabric'].area))
         # context['fabric'].canvas_data = json.loads(context['fabric'].canvas_data)
         return context
     

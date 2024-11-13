@@ -8,8 +8,8 @@ function loadCanvas() {
     //let canvasData = document.getElementById('canvasData');
     let canvasData = document.getElementById('canvas-data').textContent;
     //canvasData = canvasData.value;
-    console.log(canvasData);
-    console.log("kek", JSON.parse(canvasData));
+    // console.log(canvasData);
+    // console.log("kek", JSON.parse(canvasData));
     if (canvasData) {
         canvas.loadFromJSON(JSON.parse(canvasData), canvas.renderAll.bind(canvas));
     } else {
@@ -43,18 +43,18 @@ document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('submit', function(event) {
         // Преобразуем данные canvas в JSON и записываем в скрытое поле
         const serializedCanvasData = JSON.stringify(canvas.toJSON());
-        console.log("Serialized canvas data for submission:", serializedCanvasData);
+        // console.log("Serialized canvas data for submission:", serializedCanvasData);
         hiddenCanvasDataInput.value = serializedCanvasData;
 
         // Проверка, что данные успешно записаны
-        console.log("Hidden canvas data input value:", hiddenCanvasDataInput.value);
+        // console.log("Hidden canvas data input value:", hiddenCanvasDataInput.value);
 
         let imageDataURL = canvas.toDataURL({
             format: 'png',
             multiplier: 1 // Множитель для увеличения разрешения
         });
-        imageDataURL = imageDataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
-        console.log(imageDataURL);
+        // imageDataURL = imageDataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
+        // console.log(imageDataURL);
         document.getElementById('editImage').value = imageDataURL;
     });
 
@@ -81,20 +81,3 @@ document.addEventListener('DOMContentLoaded', function () {
         fabricTypeSelect.dispatchEvent(new Event('change'));
     }
 });
-// document.querySelector('form').addEventListener('submit', function(event) {
-//     //event.preventDefault();  // Остановим стандартную отправку формы
-//     console.log("Пост запрос");
-//     const canvas = new fabric.Canvas('canvas');
-//     const canvasData = JSON.stringify(canvas.toJSON());  // Преобразуем данные canvas в JSON
-//     // Записываем JSON данные canvas в скрытое поле формы
-//     document.getElementById('canvasData').value = canvasData;
-
-//     let imageDataURL = canvas.toDataURL({
-//         format: 'png',
-//         multiplier: 1 // Множитель для увеличения разрешения
-//     });
-//     imageDataURL = imageDataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
-//     console.log(imageDataURL);
-//     document.getElementById('editImage').value = imageDataURL;
-
-// });

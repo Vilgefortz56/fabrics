@@ -89,8 +89,7 @@
                     </div>
                     <div class="col">
                         <div class="card border-secondary mb-0" style="max-width: 100%;">
-                            {% comment %} <img src="{{ fabric.image.url }}" class="card-img-top border border-secondary-subtle" alt="{{ fabric.user.username}}"> {% endcomment %}
-                            <canvas class="card-img-top border border-secondary-subtle" id="canvas-{{ fabric.id }}" data-fabric-id="{{ fabric.id }}"></canvas>
+                            <img src="{{ fabric.image.url }}" class="card-img-top border border-secondary-subtle" alt="{{ fabric.user.username}}">
                             <div class="card-body {% if request.user.is_authenticated %} 
                             {% if request.user.is_superuser or request.user.role == 'admin' or request.user.role == 'store'%} mb-0 pb-0 {% endif %} {% endif %}">
                             <h5 class="card-title">Ткань {{ fabric.id }} </h5>

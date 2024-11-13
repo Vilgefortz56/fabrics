@@ -13,9 +13,11 @@
                     <label for="fabric_type" class="form-label">Тип ткани:</label>
                     <select name="fabric_type" id="fabric_type" class="form-select">
                         {% for choice in form.fabric_type.field.choices %}
-                            <option value="{{ choice.0 }}" {% if choice.0 == fabric.fabric_type.id %} selected="selected" {% endif %}>
-                                {{ choice.1 }}
-                            </option>
+                            {% if choice.1 != "---------" %}
+                                <option value="{{ choice.0 }}" {% if choice.0 == fabric.fabric_type.id %} selected="selected" {% endif %}>
+                                    {{ choice.1 }}
+                                </option>
+                            {% endif %}
                         {% endfor %}
                     </select>
                 </div>
@@ -24,9 +26,11 @@
                     <label for="fabric_type" class="form-label">Вид ткани:</label>
                     <select name="fabric_view" id="fabric_view" class="form-select">
                         {% for choice in form.fabric_view.field.choices %}
+                        {% if choice.1 != "---------" %}
                             <option value="{{ choice.0 }}" {% if choice.0 == fabric.fabric_view.id %} selected="selected" {% endif %}>
                                 {{ choice.1 }}
                             </option>
+                        {% endif %}
                         {% endfor %}
                     </select>
                 </div> 
@@ -44,25 +48,35 @@
 
                 <!-- Площадь -->
                 <div class="col-md-3">
-                    <label for="area" class="form-label">Площадь (кв. м.):</label>
-                    <input type="number" name="area" id="area" class="form-control" value="{{ fabric.area }}">
+                    <label for="area_kek" class="form-label">Площадь (кв. м.):</label>
+                    <input type="number" name="area" id="area" class="form-control" step="any" value="">
                 </div>
                 <div class="col-md-3">
                     <button type="submit" class="btn btn-secondary h-100">Сохранить</button>
                 </div>
             </div>
-        {% comment %} <input type="hidden" id="canvasData" name="canvas_data" value="{{ fabric.image.url }}"> {% endcomment %}
-            <input type="hidden" name="edit_image" id="editImage">
+            <input type="hidden" name="edit_image" id="editImage" value="">
             <input type="hidden" id="canvasData" name="canvas_data" value="">
         {{ fabric.canvas_data|json_script:"canvas-data" }}
         <div class="mb-3 mt-3">
             <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
         </div>
+        {% comment %} {% for field in form %}
+        <div class="form-group">
+                {{ field.label }}
+                {{ field }}
+                {% for error in field.errors %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+        </div>
+        {% endfor %} {% endcomment %}
     </form>
 </main>
 
-<script src="{% static 'fabric_inventory/js/edit.js' %}">
-{% comment %}<script>
+<script src="{% static 'fabric_inventory/js/edit.js' %}"> </script>
+<script>    
+    let test = "{{ fabric.area }}";
+    document.getElementById('area').value = parseFloat(test.replace(',', '.'));
 
     {% comment %} let canvas = new fabric.Canvas('canvas');
     console.log('Привет');
