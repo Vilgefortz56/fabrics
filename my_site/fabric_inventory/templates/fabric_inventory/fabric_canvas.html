@@ -90,8 +90,13 @@
 <div class="container">
 <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
 </div>
+{% comment %} <div id="data-container" data-fabric-data="{{ fabric_data|json_script:'fabricData' }}"></div> {% endcomment %}
+{{ fabric_data|json_script:'fabricData' }}
 </main>
 
+<script>
+
+</script>
 <!-- Подключение Bootstrap JS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <!--<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>-->
@@ -99,41 +104,4 @@
 
 <!-- Подключение JS файла -->
 <script src="{% static 'fabric_inventory/js/canvas.js' %}"></script>
-
-<script>
-  // Передаем данные типов и видов в JavaScript
-  const fabricData = {{ fabric_data|safe }};
-  
-  // Функция для обновления вариантов "Вид материала" в зависимости от выбранного "Типа материала"
-  function updateViewOptions() {
-      const selectedTypeId = document.getElementById('categorySelect').value;
-      const viewSelect = document.getElementById('viewSelect');
-
-      // Очистка текущих вариантов "Вид материала"
-      viewSelect.innerHTML = '';
-
-      // Если выбран тип, добавляем соответствующие варианты
-      if (selectedTypeId && fabricData[selectedTypeId]) {
-          fabricData[selectedTypeId].forEach(function(view, index) {
-              const option = document.createElement('option');
-              option.value = view.id;
-              option.textContent = view.name;
-              viewSelect.appendChild(option);
-
-              // Автоматически выбираем первый вид ткани
-              if (index === 0) {
-                  viewSelect.value = view.id;
-              }
-          });
-      }
-  }
-
-  // Событие при изменении выбора "Типа материала"
-  document.getElementById('categorySelect').addEventListener('change', updateViewOptions);
-
-  // Инициализация при первой загрузке страницы
-  document.addEventListener('DOMContentLoaded', function() {
-      updateViewOptions();
-  });
-</script>
 {% endblock%}

@@ -27,12 +27,13 @@ def add_fabric_page(request):
     fabric_types = FabricType.objects.all()
     fabric_views = FabricView.objects.all()
 
-        # Формируем словарь для передачи в JSON
+    # Формируем словарь для передачи в JSON
     fabric_data = {
         fabric_type.id: list(fabric_type.views.values('id', 'name'))
         for fabric_type in fabric_types
     }
-
+    # print(type(fabric_data))
+    # print(json.dumps(fabric_data, indent=4))
     return render(request, 'fabric_inventory/fabric_canvas.html', {'fabric_types': fabric_types, 
                                                                    'fabric_views': fabric_views,
                                                                    'fabric_data': fabric_data})
@@ -177,10 +178,10 @@ class FabricsHome(ListView):
     def get_paginate_by(self, queryset):
         # Получаем значение параметра per_page из запроса
         try:
-            per_page = self.request.GET.get('per_page', 2)  # Значение по умолчанию 6
+            per_page = self.request.GET.get('per_page', 5)  # Значение по умолчанию 6
             return int(per_page)  # Преобразуем в int
         except TypeError and ValueError:
-            per_page = 2
+            per_page = 5
             return int(per_page)
 
     def get_filter_form(self):
@@ -241,8 +242,8 @@ class CustomLogoutView(LogoutView):
         return redirect('fabric_inventory:home')
     
 
-@csrf_exempt
 @login_required
+@csrf_exempt
 def upload_fabric_image(request):
     if request.user.is_authenticated:
         user = request.user  # Авторизованный пользователь

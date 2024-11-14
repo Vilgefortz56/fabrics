@@ -1,5 +1,46 @@
+// Передаем данные типов и видов в JavaScript
+const rawData = document.getElementById('fabricData').textContent;
+console.log(rawData);
+const fabricData = JSON.parse(rawData);
+console.log(JSON.parse(rawData));
+
+console.log(fabricData);
+// Функция для обновления вариантов "Вид материала" в зависимости от выбранного "Типа материала"
+function updateViewOptions() {
+    const selectedTypeId = document.getElementById('categorySelect').value;
+    const viewSelect = document.getElementById('viewSelect');
+
+    // Очистка текущих вариантов "Вид материала"
+    viewSelect.innerHTML = '';
+
+    // Если выбран тип, добавляем соответствующие варианты
+    if (selectedTypeId && fabricData[selectedTypeId]) {
+        fabricData[selectedTypeId].forEach(function(view, index) {
+            const option = document.createElement('option');
+            option.value = view.id;
+            option.textContent = view.name;
+            viewSelect.appendChild(option);
+
+            // Автоматически выбираем первый вид ткани
+            if (index === 0) {
+                viewSelect.value = view.id;
+            }
+        });
+    }
+}
+
+// Событие при изменении выбора "Типа материала"
+document.getElementById('categorySelect').addEventListener('change', updateViewOptions);
+
+// Инициализация при первой загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOMContentLoaded");
+    updateViewOptions();
+});
+
 const inputArea = document.getElementById('inputArea');
 let current_area = 0;
+console.log(current_area);
 
 window.onload = function() {
     document.getElementById('inputArea').value = '';  // Очищаем поле при загрузке
@@ -24,9 +65,10 @@ canvas.on('object:added', function(e) {
 
 // Настройка сетки
 let grid = document.getElementById('gridSize').value;
-
+console.log('Сетка отрисована', grid);
 // Функция для рисования сетки
 function drawGrid() {
+    console.log('Сетка отрисована');
     // Удаляем существующие линии сетки
     canvas.getObjects('gridLine').forEach(function(line) {
     canvas.remove(line);
@@ -42,19 +84,23 @@ function drawGrid() {
     });
     canvas.add(vertical);
     }
-
+    console.log('Сетка отрисована', canvas.getObjects());
     for (let i = 0; i <= (canvas.height / grid); i++) {
     const horizontal = new fabric.Line([ 0, i * grid, canvas.width, i * grid], {
         stroke: '#c9c9c9',
         selectable: false,
         evented: false,
-        type: 'gridLine'
+        // type: 'gridLine'
     });
     canvas.add(horizontal);
     }
-
+    
     // Отправляем сетку на задний план
-    // canvas.sendToBack(canvas.getObjects('gridLine'));
+    //canvas.sendToBack(...canvas.getObjects('gridLine'));
+    // canvas.getObjects('gridLine').forEach(obj => {
+    //     canvas.sendToBack(obj);
+    // });
+    
 }
 
 // Начальное рисование сетки
@@ -63,6 +109,7 @@ drawGrid();
 // Обработчик изменения размера сетки
 document.getElementById('gridSize').addEventListener('input', function() {
     grid = parseInt(this.value);
+    console.log('Размер сетки изменен', grid);
     // document.getElementById('gridSizeLabel').innerText = grid + ' px';
     drawGrid();
 });
