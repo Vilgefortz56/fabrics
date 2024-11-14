@@ -75,6 +75,14 @@ class FabricEditForm(forms.ModelForm):
         self.fields['fabric_type'].empty_label = None
         self.fields['fabric_view'].empty_label = None
         self.fields['status'].empty_label = None
+        selected_types = self.data.getlist('fabric_types') if 'fabric_types' in self.data else self.initial.get('fabric_types')
+        if selected_types:
+            self.fields['fabric_views'].queryset = FabricView.objects.filter(fabric_type__id__in=selected_types)
+
+        # Устанавливаем выбранные значения для видов тканей, если они были переданы
+        selected_views = self.data.getlist('fabric_views') if 'fabric_views' in self.data else self.initial.get('fabric_views')
+        if selected_views:
+            self.fields['fabric_views'].initial = selected_views
 
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)

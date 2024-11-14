@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 from typing import Any
 
+from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView, LogoutView
@@ -47,6 +48,16 @@ def home_page(request):
 def get_fabric_views(request, fabric_type_id):
     fabric_views = FabricView.objects.filter(fabric_type_id=fabric_type_id)
     data = [{'id': fabric_view.id, 'name': fabric_view.name} for fabric_view in fabric_views]
+    statuses = Fabric._meta.get_field('status').choices
+    statuses_data = [{'id': status[0], 'name': status[1]} for status in statuses]
+    current_view_id = request.GET.get('current_view_id')
+    current_status_id = request.GET.get('current_status_id')
+    data = {
+            'views': data, 
+            'current_view_id': current_view_id, 
+            'current_status_id': current_status_id,
+            'statuses': statuses_data
+            }
     return JsonResponse(data, safe=False)
 
 # def get_fabric_views_ajax(request):
@@ -114,6 +125,7 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
         if canvas_data:
             # Сохраняем данные canvas в поле модели
             form.instance.canvas_data = canvas_data
+        self.request.session['image_update_time'] = timezone.now().timestamp()
         return super().form_valid(form)
     
     # Переопределяем метод для получения объекта по pk

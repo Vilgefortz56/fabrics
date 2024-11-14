@@ -39,9 +39,11 @@
                     <label for="status" class="form-label">Статус:</label>
                     <select name="status" id="status" class="form-select">
                         {% for choice in form.status.field.choices %}
+                        {% if choice.1 != "---------" %}
                             <option value="{{ choice.0 }}" {% if choice.0 == fabric.status %} selected="selected" {% endif %}>
                                 {{ choice.1 }}
                             </option>
+                        {% endif %}
                         {% endfor %}
                     </select>
                 </div>
@@ -61,15 +63,6 @@
         <div class="mb-3 mt-3">
             <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
         </div>
-        {% comment %} {% for field in form %}
-        <div class="form-group">
-                {{ field.label }}
-                {{ field }}
-                {% for error in field.errors %}
-                    <div class="alert alert-danger">{{ error }}</div>
-                {% endfor %}
-        </div>
-        {% endfor %} {% endcomment %}
     </form>
 </main>
 
@@ -77,132 +70,9 @@
 <script>    
     let test = "{{ fabric.area }}";
     document.getElementById('area').value = parseFloat(test.replace(',', '.'));
-
-    {% comment %} let canvas = new fabric.Canvas('canvas');
-    console.log('Привет');
-    // Получение размеров canvas
-    let canvasWidth = canvas.getWidth();
-    let canvasHeight = canvas.getHeight();
-    // Восстановление canvas из JSON
-    function loadCanvas() {
-        //let canvasData = document.getElementById('canvasData');
-        let canvasData = document.getElementById('canvas-data').textContent;
-        //canvasData = canvasData.value;
-        console.log(canvasData);
-        console.log("kek", JSON.parse(canvasData));
-        if (canvasData) {
-            canvas.loadFromJSON(JSON.parse(canvasData), canvas.renderAll.bind(canvas));
-        } else {
-            alert("No saved drawing found.");
-        }
-    }
-
-    function renderCanvas() {
-        canvas.renderAll();
-    }
-    document.querySelector('form').addEventListener('submit', function(event) {
-        console.log("Пост запрос");
-        const canvasData = JSON.stringify(canvas.toJSON());  // Преобразуем данные canvas в JSON
-        document.getElementById('canvasData').value = canvasData;  // Записываем данные в скрытое поле
-    });
-    document.addEventListener("DOMContentLoaded", loadCanvas);
-    //setTimeout(100);
-    document.addEventListener("DOMContentLoaded", renderCanvas);
-    document.addEventListener('DOMContentLoaded', function () {
-        const fabricTypeSelect = document.querySelector('[name="fabric_type"]');
-        const fabricViewSelect = document.querySelector('[name="fabric_view"]');
-        fabricTypeSelect.addEventListener('change', function () {
-            const fabricTypeId = this.value;
-            if (fabricTypeId) {
-                // Отправляем AJAX запрос для получения соответствующих видов ткани
-                fetch(`/get_fabric_views/${fabricTypeId}/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        fabricViewSelect.innerHTML = ''; // Очистить существующие опции
-                        data.forEach(function (fabricView) {
-                            const option = document.createElement('option');
-                            option.value = fabricView.id;
-                            option.text = fabricView.name;
-                            fabricViewSelect.appendChild(option);
-                        });
-                    });
-            }
-        });
-
-        // Если страница уже была загружена с выбранным типом ткани
-        if (fabricTypeSelect.value) {
-            fabricTypeSelect.dispatchEvent(new Event('change'));
-        }
-    });
-    document.querySelector('form').addEventListener('submit', function(event) {
-        //event.preventDefault();  // Остановим стандартную отправку формы
-        console.log("Пост запрос");
-        const canvas = new fabric.Canvas('canvas');
-        const canvasData = JSON.stringify(canvas.toJSON());  // Преобразуем данные canvas в JSON
-        // Записываем JSON данные canvas в скрытое поле формы
-        document.getElementById('canvasData').value = canvasData;
-        
-    }); {% endcomment %}
-
+    const currentViewId = "{{ fabric.fabric_view.id }}";
+    const currentStatusId = "{{ fabric.status }}";
 </script>
 
-{% comment %} <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        const fabricTypeSelect = document.querySelector('[name="fabric_type"]');
-        const fabricViewSelect = document.querySelector('[name="fabric_view"]');
-
-
-        const canvas = new fabric.Canvas('canvas');
-        const canvasData = JSON.stringify(canvas.toJSON());  // Преобразуем данные canvas в JSON
-
-        // Настраиваем и отправляем POST-запрос с JSON
-        fetch("{% url 'fabric_inventory:save_canvas_data' %}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": "{{ csrf_token }}"  // Добавляем CSRF-токен для защиты
-            },
-            body: JSON.stringify({
-                canvas_data: canvasData,
-                pk: "{{ fabric.pk }}"
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert("Canvas данные успешно сохранены!");
-            } else {
-                alert("Произошла ошибка при сохранении данных.");
-            }
-        })
-        .catch(error => console.error("Ошибка:", error));
-
-        loadCanvas();
-        //setTimeout(100);
-        renderCanvas();
-        fabricTypeSelect.addEventListener('change', function () {
-            const fabricTypeId = this.value;
-            if (fabricTypeId) {
-                // Отправляем AJAX запрос для получения соответствующих видов ткани
-                fetch(`/get_fabric_views/${fabricTypeId}/`)
-                    .then(response => response.json())
-                    .then(data => {
-                        fabricViewSelect.innerHTML = ''; // Очистить существующие опции
-                        data.forEach(function (fabricView) {
-                            const option = document.createElement('option');
-                            option.value = fabricView.id;
-                            option.text = fabricView.name;
-                            fabricViewSelect.appendChild(option);
-                        });
-                    });
-            }
-        });
-
-        // Если страница уже была загружена с выбранным типом ткани
-        if (fabricTypeSelect.value) {
-            fabricTypeSelect.dispatchEvent(new Event('change'));
-        }
-    });
-</script> {% endcomment %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
 {% endblock %}

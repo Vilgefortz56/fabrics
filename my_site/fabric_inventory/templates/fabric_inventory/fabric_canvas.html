@@ -110,7 +110,7 @@
       const viewSelect = document.getElementById('viewSelect');
 
       // Очистка текущих вариантов "Вид материала"
-      viewSelect.innerHTML = '<option value="">Выберите вид</option>';
+      viewSelect.innerHTML = '';
 
       // Если выбран тип, добавляем соответствующие варианты
       if (selectedTypeId && fabricData[selectedTypeId]) {
