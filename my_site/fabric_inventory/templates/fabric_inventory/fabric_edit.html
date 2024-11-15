@@ -5,55 +5,7 @@
 
 {% block content %}
 <main class='container mt-2'>
-    <div class="container-fluid">
-        <div class="toolbar d-flex justify-content-start mb-3">
-          <button id="selectTool" class="btn">
-              <i class="fas fa-mouse-pointer"></i>
-          </button>
-          <button id="drawPolylineTool" class="btn">
-              <i class="fas fa-draw-polygon"></i>
-          </button>
-          <button id="calculateArea" class="btn">
-              <i class="fas fa-calculator"></i>
-          </button>
-          <button id="saveData" class="btn">
-              <i class="fas fa-save"></i>
-          </button>
-          <button id="addLineLabel" class="btn">
-              <i class="fas fa-tag"></i>
-          </button>
-          <!-- Ползунок для размера сетки -->
-          <div class="d-flex align-items-center me-3" style="white-space: nowrap;" id="input_grid">
-            <label for="gridSize" class="form-label mb-0"> <span style="white-space: nowrap;">Размер сетки:</span></label>
-            <input type="range" id="gridSize" min="20" max="50" step="5" value="50" class="form-range ms-2">
-          </div>
-          <div class="d-flex align-items-center mb-0" style="white-space: nowrap;" id="area">
-            <label class="form-label mb-0">Площадь:</label>
-            <input type="text" class="form-control " id="inputArea" placeholder="Площадь">
-            <label class="form-label mb-0 ms-2">кв. м.</label>
-          </div>
-          <div class="d-flex align-items-center mb-0 ms-0" style="white-space: nowrap;" id="area">
-            <label class="form-label mb-0">Тип материала:</label>
-            <select class="form-select" id="categorySelect" name="category">
-              {% for type in fabric_types %}
-                  <option value="{{ type.id }}">{{ type.name }}</option>
-              {% endfor %}
-            </select> 
-          </div>
-          <div class="d-flex align-items-center mb-0 ms-0" style="white-space: nowrap;" id="area">
-            <label class="form-label mb-0">Вид материала:</label>
-            <select class="form-select" id="viewSelect" name="category">
-              {% for view in fabric_views %}
-                  <option value="{{ view.id }}">{{ view.name }}</option>
-              {% endfor %}
-            </select> 
-          </div>
-        </div>
-      </div>
-        
-            
     <form id="fabricEditForm" method="POST"  enctype="multipart/form-data">
-        {% include 'fabric_inventory/edit_menu.html' %}
         {% csrf_token %}
             <div class="row">
                 <!-- Тип ткани -->
@@ -99,29 +51,41 @@
                 <!-- Площадь -->
                 <div class="col-md-3">
                     <label for="area_kek" class="form-label">Площадь (кв. м.):</label>
-                    <input type="number" name="area" id="area" class="form-control" step="any" value="">
+                    <input type="number" name="area" id="area_form" class="form-control" step="any" value="">
                 </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-secondary h-100">Сохранить</button>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="toolbar d-flex justify-content-start mb-3 mt-2">
+                        {% include 'fabric_inventory/edit_menu.html' %}
+                    </div>
+                </div>
+                <div class="col-md-3 mt-3">
+                    <button type="submit" class="btn btn-secondary h-50">Сохранить</button>
                 </div>
             </div>
             
             <input type="hidden" name="edit_image" id="editImage" value="">
             <input type="hidden" id="canvasData" name="canvas_data" value="">
         {{ fabric.canvas_data|json_script:"canvas-data" }}
+        {{ fabric.area|json_script:"area-data" }}
+        {{ fabric.fabric_view_id|json_script:"viewid-data" }}
+        {{ fabric.status|json_script:"status-data" }}
         <div class="mb-3 mt-3">
             <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
         </div>
     </form>
 </main>
 
-<script src="{% static 'fabric_inventory/js/edit.js' %}"> </script>
-<script>    
-    let test = "{{ fabric.area }}";
-    document.getElementById('area').value = parseFloat(test.replace(',', '.'));
-    const currentViewId = "{{ fabric.fabric_view.id }}";
-    const currentStatusId = "{{ fabric.status }}";
-</script>
+<script src="{% static 'fabric_inventory/js/edit_load.js' %}"> </script>
 
+<script>
+    // Задержка подгрузки второго скрипта
+    setTimeout(function() {
+        var script = document.createElement('script');
+        script.src = "{% static 'fabric_inventory/js/edit_drawing.js' %}";
+        document.body.appendChild(script);
+    }, 500); // Задержка в 3 секунды
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
 {% endblock %}

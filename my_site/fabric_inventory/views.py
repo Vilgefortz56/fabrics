@@ -119,10 +119,11 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
         # Отделяем метаданные base64 и декодируем изображение
         frmt, imgstr = edit_image.split(';base64,')  
         img_data = ContentFile(base64.b64decode(imgstr))
-        if os.path.isfile(image_path):
-            with open(image_path, 'wb') as f:
-                f.write(img_data.read())
-            instance.save()  
+        os.makedirs(os.path.dirname(image_path), exist_ok=True)
+        # Открываем файл для записи в бинарном режиме, создавая его, если он не существует
+        with open(image_path, 'wb') as f:
+            f.write(img_data.read())
+        instance.save()
         if canvas_data:
             # Сохраняем данные canvas в поле модели
             form.instance.canvas_data = canvas_data

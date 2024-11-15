@@ -1,18 +1,24 @@
 let canvas = new fabric.Canvas('canvas');
 let isFirstLoad = true;
-console.log('Привет');
 // Получение размеров canvas
 let canvasWidth = canvas.getWidth();
 let canvasHeight = canvas.getHeight();
+
+let currentArea = document.getElementById('area-data').textContent;
+document.getElementById('area_form').value = parseFloat(currentArea.replace(',', '.'));
+const currentViewId = document.getElementById('viewid-data').textContent;
+const currentStatusId = document.getElementById('status-data').textContent;
+console.log(currentStatusId);
+
 // Восстановление canvas из JSON
 function loadCanvas() {
-    //let canvasData = document.getElementById('canvasData');
     let canvasData = document.getElementById('canvas-data').textContent;
-    //canvasData = canvasData.value;
-    // console.log(canvasData);
-    // console.log("kek", JSON.parse(canvasData));
     if (canvasData) {
-        canvas.loadFromJSON(JSON.parse(canvasData), canvas.renderAll.bind(canvas));
+            let parsedData = JSON.parse(canvasData);
+            canvas.loadFromJSON(parsedData, function()  {
+                // Принудительно обновляем canvas
+                canvas.requestRenderAll();
+            });
     } else {
         alert("No saved drawing found.");
     }
@@ -22,9 +28,8 @@ function renderCanvas() {
     canvas.renderAll();
 }
 
-document.addEventListener("DOMContentLoaded", loadCanvas);
-//setTimeout(100);
-document.addEventListener("DOMContentLoaded", renderCanvas);
+document.addEventListener("DOMContentLoaded",  loadCanvas);
+// document.addEventListener("DOMContentLoaded", renderCanvas);
 document.addEventListener('DOMContentLoaded', function () {
     const fabricTypeSelect = document.querySelector('[name="fabric_type"]');
     const fabricViewSelect = document.querySelector('[name="fabric_view"]');
@@ -45,18 +50,11 @@ document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('submit', function(event) {
         // Преобразуем данные canvas в JSON и записываем в скрытое поле
         const serializedCanvasData = JSON.stringify(canvas.toJSON());
-        // console.log("Serialized canvas data for submission:", serializedCanvasData);
         hiddenCanvasDataInput.value = serializedCanvasData;
-
-        // Проверка, что данные успешно записаны
-        // console.log("Hidden canvas data input value:", hiddenCanvasDataInput.value);
-
         let imageDataURL = canvas.toDataURL({
             format: 'png',
             multiplier: 1 // Множитель для увеличения разрешения
         });
-        // imageDataURL = imageDataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
-        // console.log(imageDataURL);
         document.getElementById('editImage').value = imageDataURL;
     });
     fabricTypeSelect.addEventListener('change', function () {
@@ -76,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     
                     // Устанавливаем текущий вид, если он совпадает с переданным
                     if (isFirstLoad && fabricView.id == data.current_view_id) {
+                        console.log('Лел');
                         option.selected = true;
                     }
                 });
@@ -87,12 +86,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     option.value = status.id;
                     option.textContent = status.name;
                     statusSelect.appendChild(option);
-
                     // Устанавливаем текущий статус, если он совпадает с переданным
-                    if (isFirstLoad && status.id == data.current_status_id) {
+                    if (isFirstLoad && (status.id == data.current_status_id.replace(/^"(.+)"$/, '$1'))) {
+                        console.log('условие выполнено');
                         option.selected = true;
                     }
                 });
+                isFirstLoad = false;
             });
         }
     });

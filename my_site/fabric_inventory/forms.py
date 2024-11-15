@@ -72,6 +72,7 @@ class FabricEditForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['area'].initial = kwargs.get('initial').get('area')
         self.fields['fabric_type'].empty_label = None
         self.fields['fabric_view'].empty_label = None
         self.fields['status'].empty_label = None

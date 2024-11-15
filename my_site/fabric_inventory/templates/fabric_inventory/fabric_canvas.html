@@ -44,26 +44,7 @@
   </div>
 <div class="container-fluid">
   <div class="toolbar d-flex justify-content-start mb-3">
-    <button id="selectTool" class="btn">
-        <i class="fas fa-mouse-pointer"></i>
-    </button>
-    <button id="drawPolylineTool" class="btn">
-        <i class="fas fa-draw-polygon"></i>
-    </button>
-    <button id="calculateArea" class="btn">
-        <i class="fas fa-calculator"></i>
-    </button>
-    <button id="saveData" class="btn">
-        <i class="fas fa-save"></i>
-    </button>
-    <button id="addLineLabel" class="btn">
-        <i class="fas fa-tag"></i>
-    </button>
-    <!-- Ползунок для размера сетки -->
-    <div class="d-flex align-items-center me-3" style="white-space: nowrap;" id="input_grid">
-      <label for="gridSize" class="form-label mb-0"> <span style="white-space: nowrap;">Размер сетки:</span></label>
-      <input type="range" id="gridSize" min="20" max="50" step="5" value="50" class="form-range ms-2">
-    </div>
+    {% include 'fabric_inventory/edit_menu.html' %}
     <div class="d-flex align-items-center mb-0" style="white-space: nowrap;" id="area">
       <label class="form-label mb-0">Площадь:</label>
       <input type="text" class="form-control " id="inputArea" placeholder="Площадь">

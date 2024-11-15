@@ -1,18 +1,13 @@
 // Передаем данные типов и видов в JavaScript
 const rawData = document.getElementById('fabricData').textContent;
-console.log(rawData);
 const fabricData = JSON.parse(rawData);
-console.log(JSON.parse(rawData));
 
-console.log(fabricData);
 // Функция для обновления вариантов "Вид материала" в зависимости от выбранного "Типа материала"
 function updateViewOptions() {
     const selectedTypeId = document.getElementById('categorySelect').value;
     const viewSelect = document.getElementById('viewSelect');
-
     // Очистка текущих вариантов "Вид материала"
     viewSelect.innerHTML = '';
-
     // Если выбран тип, добавляем соответствующие варианты
     if (selectedTypeId && fabricData[selectedTypeId]) {
         fabricData[selectedTypeId].forEach(function(view, index) {
@@ -20,7 +15,6 @@ function updateViewOptions() {
             option.value = view.id;
             option.textContent = view.name;
             viewSelect.appendChild(option);
-
             // Автоматически выбираем первый вид ткани
             if (index === 0) {
                 viewSelect.value = view.id;
@@ -40,11 +34,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 const inputArea = document.getElementById('inputArea');
 let current_area = 0;
-console.log(current_area);
 
 window.onload = function() {
     document.getElementById('inputArea').value = '';  // Очищаем поле при загрузке
-  };
+};
 // Инициализация Canvas
 const canvas = new fabric.Canvas('canvas', {
     selection: true,
@@ -65,42 +58,54 @@ canvas.on('object:added', function(e) {
 
 // Настройка сетки
 let grid = document.getElementById('gridSize').value;
-console.log('Сетка отрисована', grid);
 // Функция для рисования сетки
 function drawGrid() {
-    console.log('Сетка отрисована');
-    // Удаляем существующие линии сетки
-    canvas.getObjects('gridLine').forEach(function(line) {
-    canvas.remove(line);
-    });
-
+    canvas.remove(...canvas.getObjects("group"))
+    let lines = [];
     // Рисуем новые линии сетки
     for (let i = 0; i <= (canvas.width / grid); i++) {
     const vertical = new fabric.Line([ i * grid, 0, i * grid, canvas.height], {
         stroke: '#c9c9c9',
         selectable: false,
-        evented: false,
-        type: 'gridLine'
+        evented: false
     });
-    canvas.add(vertical);
+    lines.push(vertical);
     }
-    console.log('Сетка отрисована', canvas.getObjects());
     for (let i = 0; i <= (canvas.height / grid); i++) {
     const horizontal = new fabric.Line([ 0, i * grid, canvas.width, i * grid], {
         stroke: '#c9c9c9',
         selectable: false,
-        evented: false,
-        // type: 'gridLine'
+        evented: false
     });
-    canvas.add(horizontal);
+    lines.push(horizontal);
     }
+    const groupLines = new fabric.Group(lines, {
+        selectable: false,
+        evented: false,
+    })
     
-    // Отправляем сетку на задний план
-    //canvas.sendToBack(...canvas.getObjects('gridLine'));
-    // canvas.getObjects('gridLine').forEach(obj => {
-    //     canvas.sendToBack(obj);
-    // });
-    
+    canvas.add(groupLines);
+    canvas.renderAll();
+    canvas.toDataURL({
+        format: 'png',
+        multiplier: 1,
+        quality: 1,
+        left: 0,
+        top: 0,
+        width: canvas.width,
+        height: canvas.height,
+        callback: function (dataUrl) {
+          fabric.Image.fromURL(dataUrl, (img) => {
+            img.selectable = false;
+            img.evented = false;
+            canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+              originX: 'left',
+              originY: 'top',
+            });
+            canvas.remove(groupLines); // Удаляем группу сетки, чтобы оставить только фоновое изображение
+          });
+        },
+      });
 }
 
 // Начальное рисование сетки
@@ -450,6 +455,8 @@ function finishDrawingPolyline() {
         lockScalingY: true,
         hasBorders: false
     });
+    console.log('Polyline points', polylinePoints);
+    console.log('Poligon', polygon);
     canvas.remove(polyline);
     canvas.add(polygon);
 
@@ -571,6 +578,9 @@ function calculateArea() {
         inputArea.value = area;
         console.log(area);
         current_area = area;
+        canvas.set({
+            lines_with_labels: linesWithLabels,});
+        console.log('linesWithLabels', canvas);
         return area;
     }
     return 0;
