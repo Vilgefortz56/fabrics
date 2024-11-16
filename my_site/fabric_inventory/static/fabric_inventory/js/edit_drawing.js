@@ -1,11 +1,28 @@
 console.log('Canvas', canvas);
-canvas.getObjects().forEach(function(obj) {
+canvas.getObjects('Polygon').forEach(function(obj) {
     console.log(obj);
+    obj.set({
+        fill: 'rgba(0,0,255,0.1)',
+        stroke: 'blue',
+        strokeWidth: 2,
+        selectable: true,
+        evented: false,
+        absolutePositioned: true,
+        objectCaching: false,
+        hasControls: false,
+        lockRotation: true,
+        lockScalingX: true,
+        lockScalingY: true,
+        hasBorders: false
+    });
 });
 // Сделать сетку невыбираемой и невзаимодействующей
 let group = canvas.getObjects("Group")[0];
 group.selectable = false;
 group.evented = false;
+
+canvas.remove(...canvas.getObjects("textbox"));
+canvas.renderAll();
 
 // Настройка сетки
 let grid = document.getElementById('gridSize').value;
@@ -164,8 +181,42 @@ let isClosed = false;
 
 let polylinePoints = [];
 let polyline;
-let linesWithLabels = [];
+// let linesWithLabels = [];
+let linesWithLabels = canvas.lines_with_labels;
+console.log('linesWithLabels', linesWithLabels);
+linesWithLabels.forEach(line => {
+    // console.log('line', line);
+    let label = line.label_obj;
+    console.log('label_line', label);
+    fabric.Textbox.fromObject(label)
+        .then(text => {
+            console.log('text', text);
+            canvas.add(text);
+            canvas.requestRenderAll();
+        })
+        .catch(error => {
+            console.error('Error creating textbox:', error);
+    });
+})
 
+canvas.on('text:changed', function(event) {
+    const textbox = event.target;
+    console.log("Выбрана подпись:", textbox.getRelativeXY());
+    let line = findPolygonAtClick(textbox.getRelativeXY()).line;
+    console.log("Выбрана подпись:", line);
+    findNeededTextbox(line, textbox);
+    console.log("Массив линий", linesWithLabels);
+});
+
+
+function findNeededTextbox(line, sel_textbox) {
+    let select_idx = line.index_line;
+    linesWithLabels.forEach(text_box => {
+        if (text_box.index === select_idx) {
+            text_box.label_obj = sel_textbox.toObject();
+        }
+    });
+}
 
 canvas.on('mouse:down', function(o){
     const pointer = canvas.getPointer(o.e);
@@ -512,7 +563,8 @@ document.addEventListener('keydown', function(e) {
         canvas.renderAll();
     }
 });
-
+let customCanvas = canvas.toObject();
+customCanvas.lines_with_labels = linesWithLabels;
 // Функция расчета площади фигуры
 function calculateArea() {
     if (linesWithLabels){
@@ -525,6 +577,10 @@ function calculateArea() {
         inputArea.value = area;
         console.log(area);
         current_area = area;
+        customCanvas = canvas.toObject();
+        customCanvas.lines_with_labels = linesWithLabels;
+        console.log('linesWithLabels', linesWithLabels);
+        console.log('linesWithLabels_custom', customCanvas);
         return area;
     }
     return 0;
@@ -571,22 +627,11 @@ function calculatePolygonAreaWithRealDimensions(vertices, realSideLengths) {
     }
     return Math.abs(area / 2);
 }
-// Формула для вычисления площади многоугольника
-function computePolygonArea(vertices) {
-    let total = 0;
-    for (let i = 0, l = vertices.length; i < l; i++) {
-    const addX = vertices[i].x;
-    const addY = vertices[(i + 1) % l].y;
-    const subX = vertices[(i + 1) % l].x;
-    const subY = vertices[i].y;
-
-    total += (addX * addY);
-    total -= (subX * subY);
-    }
-    return Math.abs(total / 2) / (grid * grid); // Приводим к реальным единицам (например, кв.м)
-}
-
 
 
 // Обработчик кнопки расчета площади
 document.getElementById('calculateArea').addEventListener('click', calculateArea);
+
+// document.getElementById('saveData').addEventListener('click', function() {
+    
+// });

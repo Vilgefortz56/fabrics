@@ -238,8 +238,6 @@ canvas.on('mouse:down', function(o){
             let midX = (line.point1.x + line.point2.x) / 2;
             let midY = (line.point1.y + line.point2.y) / 2;
 
-            // Вычисляем длину линии
-            let length = Math.sqrt(Math.pow((line.point2.x - line.point1.x), 2) + Math.pow((line.point2.y - line.point1.y), 2));
 
             // Добавляем текст (подпись) на середину выбранной линии
             let label = new fabric.Textbox("Размер", {
@@ -565,7 +563,7 @@ document.addEventListener('keydown', function(e) {
         canvas.renderAll();
     }
 });
-
+let customCanvas;
 // Функция расчета площади фигуры
 function calculateArea() {
     if (linesWithLabels){
@@ -578,9 +576,9 @@ function calculateArea() {
         inputArea.value = area;
         console.log(area);
         current_area = area;
-        canvas.set({
-            lines_with_labels: linesWithLabels,});
-        console.log('linesWithLabels', canvas);
+        customCanvas = canvas.toObject();
+        customCanvas.lines_with_labels = linesWithLabels;
+        console.log('linesWithLabels', customCanvas);
         return area;
     }
     return 0;
@@ -627,130 +625,10 @@ function calculatePolygonAreaWithRealDimensions(vertices, realSideLengths) {
     }
     return Math.abs(area / 2);
 }
-// Формула для вычисления площади многоугольника
-function computePolygonArea(vertices) {
-    let total = 0;
-    for (let i = 0, l = vertices.length; i < l; i++) {
-    const addX = vertices[i].x;
-    const addY = vertices[(i + 1) % l].y;
-    const subX = vertices[(i + 1) % l].x;
-    const subY = vertices[i].y;
-
-    total += (addX * addY);
-    total -= (subX * subY);
-    }
-    return Math.abs(total / 2) / (grid * grid); // Приводим к реальным единицам (например, кв.м)
-}
 
 // Обработчик кнопки расчета площади
 document.getElementById('calculateArea').addEventListener('click', calculateArea);
 
-
-function saveCroppedImage() {
-    const allObjects = canvas.getObjects();
-    let padding = 50;
-    // Находим объект Polygon и все Textbox
-    const polygon = allObjects.find(obj => obj.type === 'polygon');
-    const textboxes = allObjects.filter(obj => obj.type === 'textbox');
-
-    // Если Polygon не найден, выходим из функции
-    if (!polygon) {
-        console.warn('Polygon object not found on the canvas.');
-        return;
-    }
-
-    // Функция для нахождения экстремальных координат (границ) объектов
-    function findBoundingBox(objects) {
-        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-        objects.forEach(obj => {
-            const bounds = obj.getBoundingRect();  // Получаем границы объекта
-            minX = Math.min(minX, bounds.left);
-            minY = Math.min(minY, bounds.top);
-            maxX = Math.max(maxX, bounds.left + bounds.width);
-            maxY = Math.max(maxY, bounds.top + bounds.height);
-        });
-
-        return { minX, minY, maxX, maxY };
-    }
-
-    // Определяем границы объекта Polygon и подписей
-    const boundingBox = findBoundingBox([polygon, ...textboxes]);
-
-    // Добавляем отступы
-    const croppedWidth = Math.max(boundingBox.maxX - boundingBox.minX + padding * 2, 0);
-    const croppedHeight = Math.max(boundingBox.maxY - boundingBox.minY + padding * 2, 0);
-
-    // Изменяем размер холста
-    canvas.setDimensions({
-        width: croppedWidth,
-        height: croppedHeight
-    });
-
-    // Получаем все объекты с холста
-    const kek = canvas.getObjects();
-
-    // Фильтруем только объекты типа Polygon и Textbox
-    const polygonsAndTextboxes = kek.filter(obj =>
-        obj.type === 'polygon' || obj.type === 'textbox'
-    );
-
-    // Сдвигаем все объекты так, чтобы они находились на новом холсте с отступами
-//    canvas.forEachObject(obj => {
-    polygonsAndTextboxes.forEach(obj => {
-        let uu = polygonsAndTextboxes.filter(ii =>
-            ii.type === 'textbox'
-        );
-
-        const bounds = obj.getBoundingRect(); // Получаем границы объекта для правильного смещения
-
-        // Перемещаем объект с учетом его текущих координат и границ
-        const newLeft = obj.left - boundingBox.minX + padding;
-        const newTop = obj.top - boundingBox.minY + padding;
-
-        // Обновляем координаты объекта
-        obj.set({
-            left: newLeft,
-            top: newTop
-        });
-
-        // Проверяем, если объект за пределами новой области
-        if (newLeft < -padding || newTop < -padding || newLeft + bounds.width > croppedWidth || newTop + bounds.height > croppedHeight) {
-            console.warn(`Textbox out of bounds: left=${newLeft}, top=${newTop}, width=${bounds.width}, height=${bounds.height}`);
-        }
-
-        // Для отладки: визуализируем границы
-        const debugRect = new fabric.Rect({
-            left: newLeft,
-            top: newTop,
-            width: bounds.width,
-            height: bounds.height,
-            fill: 'rgba(255, 0, 0, 0.2)',
-            stroke: 'red',
-            strokeWidth: 1,
-            selectable: false,
-            evented: false,
-            visible: true
-        });
-        canvas.add(debugRect);
-        console.log("объект", obj);
-    });
-    textboxes.forEach((textbox) => {
-        console.log(`Textbox visibility: ${textbox.visible}, left: ${textbox.left}, top: ${textbox.top}, text: ${textbox.text}`);
-    });
-
-    // Перерисовываем холст
-    canvas.renderAll();
-
-    // Экспортируем изображение как DataURL
-    const croppedImageURL = canvas.toDataURL({
-        format: 'png',
-        multiplier: 1,
-    });
-
-    // Отправка изображения на сервер
-    sendCroppedImageToServer(croppedImageURL);
-}
 
 // Получение CSRF-токена из cookie
 function getCSRFToken() {
@@ -788,7 +666,8 @@ function sendCroppedImageToServer() {
         format: 'png',
         multiplier: 1 // Множитель для увеличения разрешения
     });
-    let canvasData = canvas.toJSON();
+    // let canvasData = canvas.toJSON();
+    let canvasData = customCanvas;
     console.log(canvasData);
     const selectElement = document.getElementById('categorySelect');
     // Получаем CSRF-токен

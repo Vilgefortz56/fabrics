@@ -97,18 +97,18 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('fabric_inventory:home')
     
 
-    def get_initial(self):
-        initial = super().get_initial()
-        # Убедитесь, что значение `area` подставляется корректно
-        initial['area'] = self.get_object().area
-        print(initial)
-        return initial
+    # def get_initial(self):
+    #     initial = super().get_initial()
+    #     # Убедитесь, что значение `area` подставляется корректно
+    #     initial['area'] = self.get_object().area
+    #     print(initial)
+    #     return initial
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         # Устанавливаем начальное значение для поля `area` из объекта модели
-        form.fields['area'].initial = self.get_object().area
-        print(form.fields['area'].initial)
+        # form.fields['area'].initial = self.get_object().area
+        # print(form.fields['area'].initial)
         return form
 
     def form_valid(self, form):
@@ -116,6 +116,9 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
         canvas_data = form.data['canvas_data'] #self.request.POST.get('canvas_data', None)
         edit_image = form.data['edit_image'] #self.request.POST.get('edit_image', None)
         image_path = instance.image.path
+        # area = form.data['area']
+        # print("area", area)
+        # print("Edit image", edit_image)
         # Отделяем метаданные base64 и декодируем изображение
         frmt, imgstr = edit_image.split(';base64,')  
         img_data = ContentFile(base64.b64decode(imgstr))

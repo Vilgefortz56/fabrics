@@ -5,7 +5,9 @@ let canvasWidth = canvas.getWidth();
 let canvasHeight = canvas.getHeight();
 
 let currentArea = document.getElementById('area-data').textContent;
-document.getElementById('area_form').value = parseFloat(currentArea.replace(',', '.'));
+document.getElementById('inputArea').value = parseFloat(currentArea.replace(',', '.'));
+console.log(currentArea);
+console.log(document.getElementById('inputArea').value);
 const currentViewId = document.getElementById('viewid-data').textContent;
 const currentStatusId = document.getElementById('status-data').textContent;
 console.log(currentStatusId);
@@ -48,8 +50,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     form.addEventListener('submit', function(event) {
+        customCanvas = canvas.toObject();
+        customCanvas.lines_with_labels = linesWithLabels;
         // Преобразуем данные canvas в JSON и записываем в скрытое поле
-        const serializedCanvasData = JSON.stringify(canvas.toJSON());
+        const serializedCanvasData = JSON.stringify(customCanvas);
+        console.log(customCanvas);
+        console.log(serializedCanvasData);
         hiddenCanvasDataInput.value = serializedCanvasData;
         let imageDataURL = canvas.toDataURL({
             format: 'png',
