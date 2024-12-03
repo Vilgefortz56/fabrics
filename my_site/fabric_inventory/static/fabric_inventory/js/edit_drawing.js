@@ -1,3 +1,32 @@
+function transformPolygonToLine() {
+    let pol = canvas.getObjects('Polygon')[0];
+    console.log('pol', pol);
+    if (!pol) {
+        return;
+    }
+    const points = pol.points;
+    for (let i = 0; i < points.length; i++) {
+        // Вычисляем начальную и конечную точки для каждой линии
+        const start = points[i];
+        const end = points[(i + 1) % points.length]; // Замкнуть полигон, соединив последнюю точку с первой
+      
+        // Создаем объект fabric.Line
+        const line = new fabric.Line([start.x, start.y, end.x, end.y], {
+          stroke: 'black',   
+          strokeWidth: 2,    
+          selectable: true,  
+          lockRotation: true,
+          lockScalingY: true,
+        });
+        console.log('line', line.controls);
+        canvas.add(line); // Добавляем линию на канвас
+    }
+    canvas.remove(pol);
+    // Обновляем канвас, чтобы отобразить изменения
+    canvas.renderAll();
+}
+
+
 console.log('Canvas', canvas);
 canvas.getObjects('Polygon').forEach(function(obj) {
     console.log(obj);
@@ -85,6 +114,7 @@ document.getElementById('gridSize').addEventListener('input', function() {
     drawGrid();
 });
 
+transformPolygonToLine();
 
 // Установка режима инструмента
 let currentMode = 'select'; // 'select', 'drawLine', 'drawPolyline', 'addLabel'
@@ -92,6 +122,7 @@ let currentMode = 'select'; // 'select', 'drawLine', 'drawPolyline', 'addLabel'
 const selectToolButton = document.getElementById('selectTool');
 const drawPolylineToolButton = document.getElementById('drawPolylineTool');
 const addLineLabelButton = document.getElementById('addLineLabel');
+const drawLine = document.getElementById('addLine');
 
 
 addLineLabelButton.addEventListener('click', function() {
@@ -110,10 +141,17 @@ selectToolButton.addEventListener('click', function() {
     setActiveButton(this);
 });
 
+drawLine.addEventListener('click', function() {
+    currentMode = 'drawLine';
+    canvas.isDrawingMode = true;
+    canvas.selection = false;
+    setActiveButton(this);
+    console.log("Переключился на режим " + currentMode);
+});
 
 drawPolylineToolButton.addEventListener('click', function() {
     currentMode = 'drawPolyline';
-    canvas.isDrawingMode = false;
+    canvas.isDrawingMode = true;
     canvas.selection = false;
     setActiveButton(this);
 });
@@ -121,7 +159,7 @@ drawPolylineToolButton.addEventListener('click', function() {
 
 // Функция для установки активной кнопки
 function setActiveButton(button) {
-    [selectToolButton, drawPolylineToolButton, addLineLabelButton].forEach(btn => {
+    [selectToolButton, drawPolylineToolButton, addLineLabelButton, drawLine].forEach(btn => {
     btn.classList.remove('bg-secondary', 'text-white', 'active-button');
     });
     button.classList.add('bg-secondary', 'text-white', 'active-button');
@@ -218,10 +256,14 @@ function findNeededTextbox(line, sel_textbox) {
     });
 }
 
+// let startX, startY;
+let previewLine = null; // Предварительная линия
+
 canvas.on('mouse:down', function(o){
     const pointer = canvas.getPointer(o.e);
     const x = Math.round(pointer.x / grid) * grid;
     const y = Math.round(pointer.y / grid) * grid;
+    console.log('currentMode', currentMode);
     if (currentMode === 'addLineLabel') {
         console.log('Label Mode:', currentMode);
         // Поиск полигона при клике рядом с его линией
@@ -298,6 +340,45 @@ canvas.on('mouse:down', function(o){
             }
         }
     }
+
+    if (currentMode === 'drawLine') {
+        console.log('IndrawLine', currentMode);
+        if (!isDrawing) {
+            isDrawing = true;
+            const pointer = canvas.getPointer(o.e);
+            const x = snapToGrid(pointer.x);
+            const y = snapToGrid(pointer.y);
+            if (!startX && !startY) {
+                // Начало новой линии
+                startX = x;
+                startY = y;
+    
+                previewLine = new fabric.Line([startX, startY, startX, startY], {
+                    stroke: 'black',
+                    strokeWidth: 2,
+                    selectable: false,
+                    evented: false,
+                });
+                canvas.add(previewLine);
+            }
+            else{
+                const line = new fabric.Line([snapToGrid(startX), snapToGrid(startY), snapToGrid(x), snapToGrid(y)], {
+                    stroke: 'black',
+                    strokeWidth: 2,
+                    //selectable: !isDrawingMode, // Линии можно выделять только в режиме выделения
+                    hasBorders: false,
+                    hasControls: true,
+                    lockScalingY: true,
+                    lockScalingX: false,
+                });
+                canvas.add(line);
+                startX = startY = null; // Сбрасываем начальные координаты
+                canvas.remove(previewLine);
+                previewLine = null;
+                canvas.renderAll();
+            }
+        }
+    }
 });
 
 canvas.on('mouse:move', function(o){
@@ -310,6 +391,15 @@ canvas.on('mouse:move', function(o){
         const tempPoints = polylinePoints.concat([{ x: x, y: y }]);
         polyline.set({ points: tempPoints });
         polyline.setCoords();
+        canvas.renderAll();
+    }
+    else if (currentMode === 'drawLine') {
+        const pointer = canvas.getPointer(o.e);
+        const x = snapToGrid(pointer.x);
+        const y = snapToGrid(pointer.y);
+
+        // Обновляем координаты предварительной линии
+        previewLine.set({ x2: x, y2: y });
         canvas.renderAll();
     }
 });
@@ -339,12 +429,6 @@ canvas.on('mouse:dblclick', function(o) {
     }
 });
 
-
-function findObjectByName(name) {
-    return canvas.getObjects().filter(function(obj) {
-    return obj.name === name;
-    })[0];  // Возвращаем первый объект с заданным именем
-}
 
 let distanceThreshold = 20;
 
@@ -462,6 +546,7 @@ function finishDrawingPolyline() {
     currentMode = 'select';
     setActiveButton(selectToolButton);
     canvas.selection = true;
+    canvas.isDrawingMode = false;
 
     // Выделяем новый многоугольник
     canvas.setActiveObject(polygon);
@@ -486,7 +571,25 @@ canvas.on('object:moving', function(options) {
         top: Math.round(obj.top / grid) * grid
     });
     if (obj.type === 'line') {
-    snapLineToGrid(obj);
+        // Вычисляем центр линии
+        const centerX = (obj.x1 + obj.x2) / 2;
+        const centerY = (obj.y1 + obj.y2) / 2;
+
+        // Вычисляем ближайшие координаты сетки для центра
+        const snappedCenterX = snapToGrid(centerX);
+        const snappedCenterY = snapToGrid(centerY);
+
+        // Вычисляем смещение
+        const deltaX = snappedCenterX - centerX;
+        const deltaY = snappedCenterY - centerY;
+
+        // Применяем смещение к каждой точке линии
+        obj.set({
+            x1: obj.x1 + deltaX,
+            y1: obj.y1 + deltaY,
+            x2: obj.x2 + deltaX,
+            y2: obj.y2 + deltaY
+        });
     } else if (obj.type === 'polyline' || obj.type === 'polygon') {
     // Привязка вершин многоугольника к сетке
     const points = obj.get('points');
@@ -497,6 +600,11 @@ canvas.on('object:moving', function(options) {
     obj.set({ points: points });
     }
 });
+
+// Функция для вычисления ближайшей точки сетки
+function snapToGrid(value) {
+    return Math.round(value / gridSize) * gridSize;
+}
 
 // Функция привязки концов линии к сетке при перемещении
 function snapLineToGrid(line) {

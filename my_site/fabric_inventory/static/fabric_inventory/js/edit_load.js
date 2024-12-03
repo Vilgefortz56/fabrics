@@ -20,6 +20,7 @@ function loadCanvas() {
             canvas.loadFromJSON(parsedData, function()  {
                 // Принудительно обновляем canvas
                 canvas.requestRenderAll();
+                // transformPolygonToLine();
             });
     } else {
         alert("No saved drawing found.");

@@ -136,10 +136,10 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
     # Переопределяем метод для получения объекта по pk
     def get_object(self):
         pk = self.kwargs.get('pk')  # Получаем pk из URL
-        print(pk)
+        # print(pk)
         #print(get_object_or_404(Fabric, pk=pk).area)
         obj = get_object_or_404(Fabric, pk=pk)
-        print("Во вьюхе",type(obj.canvas_data))
+        # print("Во вьюхе",type(obj.canvas_data))
         return get_object_or_404(Fabric, pk=pk)  # Возвращаем объект или 404
     
     def get_context_data(self, **kwargs):

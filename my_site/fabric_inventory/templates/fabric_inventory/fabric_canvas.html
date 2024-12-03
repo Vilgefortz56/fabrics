@@ -69,7 +69,8 @@
   </div>
 </div>
 <div class="container">
-<canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
+  <div id="canvasContainer" class="" width="1300" height="750">
+{% comment %} <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas> {% endcomment %}
 </div>
 {% comment %} <div id="data-container" data-fabric-data="{{ fabric_data|json_script:'fabricData' }}"></div> {% endcomment %}
 {{ fabric_data|json_script:'fabricData' }}
