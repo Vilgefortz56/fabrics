@@ -1,3 +1,44 @@
+// Передаем данные типов и видов в JavaScript
+const rawData = document.getElementById('fabricData').textContent;
+const fabricData = JSON.parse(rawData);
+
+// Функция для обновления вариантов "Вид материала" в зависимости от выбранного "Типа материала"
+function updateViewOptions() {
+    const selectedTypeId = document.getElementById('categorySelect').value;
+    const viewSelect = document.getElementById('viewSelect');
+    // Очистка текущих вариантов "Вид материала"
+    viewSelect.innerHTML = '';
+    // Если выбран тип, добавляем соответствующие варианты
+    if (selectedTypeId && fabricData[selectedTypeId]) {
+        fabricData[selectedTypeId].forEach(function(view, index) {
+            const option = document.createElement('option');
+            option.value = view.id;
+            option.textContent = view.name;
+            viewSelect.appendChild(option);
+            // Автоматически выбираем первый вид ткани
+            if (index === 0) {
+                viewSelect.value = view.id;
+            }
+        });
+    }
+}
+
+// Событие при изменении выбора "Типа материала"
+document.getElementById('categorySelect').addEventListener('change', updateViewOptions);
+
+// Инициализация при первой загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOMContentLoaded");
+    updateViewOptions();
+});
+
+const inputArea = document.getElementById('inputArea');
+let current_area = 0;
+
+window.onload = function() {
+    document.getElementById('inputArea').value = '';  // Очищаем поле при загрузке
+};
+
 const stage = new Konva.Stage({
     container: 'canvasContainer',
     width: 1300,
@@ -35,14 +76,14 @@ document.getElementById('gridSize').addEventListener('input', function() {
 let currentMode = 'select';
 let selectedObjects = [];
 const selectToolButton = document.getElementById('selectTool');
-const drawLineButton = document.getElementById('addLine');
+// const drawLineButton = document.getElementById('addLine');
 const drawPol = document.getElementById('drawPolylineTool');
 const addLineLabelButton  = document.getElementById('addLineLabel');
 const saveDataButton = document.getElementById('saveData');
 const calculateAreaButton = document.getElementById('calculateArea');
 
 function setActiveButton(button) {
-    [selectToolButton, drawLineButton, drawPol, addLineLabelButton ].forEach(btn => btn.classList.remove('bg-secondary', 'text-white', 'active-button'));
+    [selectToolButton, drawPol, addLineLabelButton ].forEach(btn => btn.classList.remove('bg-secondary', 'text-white', 'active-button'));
     button.classList.add('bg-secondary', 'text-white', 'active-button');
 }
 
@@ -54,20 +95,23 @@ addLineLabelButton .addEventListener('click', function() {
 
 selectToolButton.addEventListener('click', function() {
     currentMode = 'select';
+    setMode(currentMode)
     isSelectMode = true;
     setActiveButton(this);
 });
 
-drawLineButton.addEventListener('click', function() {
-    currentMode = 'drawLine';
-    isSelectMode = false;
-    setActiveButton(this);
-});
+// drawLineButton.addEventListener('click', function() {
+//     currentMode = 'drawLine';
+//     isSelectMode = false;
+//     setActiveButton(this);
+// });
 
 drawPol.addEventListener('click', function() {
     currentMode = 'drawPolyLine';
     isSelectMode = false;
+    setMode(currentMode);
     setActiveButton(this);
+    // startDrawingPolyline();
 });
 
 // Функция привязки к сетке
@@ -254,7 +298,7 @@ function addLabelToLine(line) {
         text: 'Подпись',
         x: 0,
         y: 0,
-        fontSize: 20,
+        fontSize: 22,
         fontFamily: 'Times New Roman',
         fill: 'black',
         draggable: true,
@@ -340,7 +384,7 @@ function addLabelToLine(line) {
         textarea.style.position = 'absolute';
         textarea.style.top = `${areaPosition.y}px`;
         textarea.style.left = `${areaPosition.x}px`;
-        textarea.style.width = `${label.width() - label.padding() * 2}px`;
+        textarea.style.width = `${label.width() - label.padding() * 2 + 100}px`;
         textarea.style.height = `${label.height() - label.padding() * 2 + 10}px`;
         textarea.style.fontSize = `${label.fontSize()}px`;
         textarea.style.fontFamily = label.fontFamily();
@@ -395,20 +439,6 @@ function addLabelToLine(line) {
     contentLayer.draw();
 }
 
-function removeLabelFromLine(line) {
-    if (!lineLabelMap.has(line)) {
-        alert('У этой линии нет подписи.');
-        return;
-    }
-
-    const labelGroup = lineLabelMap.get(line);
-
-    labelGroup.destroy();
-    lineLabelMap.delete(line);
-
-    contentLayer.draw();
-}
-
 
 // Обработчик клика по линии для добавления подписи
 stage.on('click', (e) => {
@@ -431,6 +461,7 @@ let polylinePoints = [];
 let startX, startY;
 
 function startDrawingPolyline() {
+    cancelPolylineDrawing();
     isDrawingPolyline = true;
     polylinePoints = [];
 
@@ -475,6 +506,23 @@ function onPolylineMouseMove(e) {
     const tempPoints = polylinePoints.slice().concat([snappedX, snappedY]);
     polyline.points(tempPoints);
     contentLayer.draw();
+}
+
+function cancelPolylineDrawing() {
+    if (isDrawingPolyline) {
+        isDrawingPolyline = false;
+
+        // Удаляем временную полилинию, если она есть
+        if (polyline) {
+            polyline.destroy();
+            contentLayer.draw();
+        }
+
+        // Отключаем события рисования
+        stage.off('mousedown', onPolylineMouseDown);
+        stage.off('mousemove', onPolylineMouseMove);
+        stage.off('dblclick', finishPolyline);
+    }
 }
 
 // Функция для проверки коллинеарности трех точек
@@ -534,9 +582,20 @@ function simplifyPolyline(points_array) {
 function finishPolyline() {
     if (!isDrawingPolyline) return;
 
-    console.log('До упрощения', polylinePoints);
+    
     polylinePoints = simplifyPolyline(polylinePoints);
+    console.log('После упрощения', polylinePoints);
     polylinePoints = arrayToDict(polylinePoints);
+
+    const pos = stage.getPointerPosition();
+    const snappedX = snapToGrid(pos.x, gridSize);
+    const snappedY = snapToGrid(pos.y, gridSize);
+
+    // Проверяем, кликнули ли мы в начальную точку
+    const distanceToStart = Math.hypot(snappedX - polylinePoints[0].x, snappedY - polylinePoints[0].y);
+    const isClosingPolyline = distanceToStart < gridSize;
+    console.log('Это начальная точка?', isClosingPolyline);
+
     // Проверяем, замкнута ли полилиния
     const firstPoint = polylinePoints[0];
     // Проверка на коллинеарность последней точки, первой точки и второй точки
@@ -558,14 +617,15 @@ function finishPolyline() {
     // Удаляем временную полилинию и добавляем сегменты как отдельные линии
     polyline.destroy();
     // Проверка: если `polylinePoints` содержит всего 2 точки, добавляем как одиночный отрезок
-    if (polylinePoints.length === 4) { 
-        // Добавляем одиночную линию
-        addEditableLine(polylinePoints[0], polylinePoints[1], polylinePoints[2], polylinePoints[3]);
+    if (!isClosingPolyline) { 
+        for (let i = 0; i < polylinePoints.length-2; i += 2) {
+            const [x1, y1, x2, y2] = [polylinePoints[i], polylinePoints[i + 1], polylinePoints[i + 2], polylinePoints[i + 3]];
+            addEditableLine(x1, y1, x2, y2);
+        }
         contentLayer.draw();
     } else {
         // Если точек больше, добавляем сегменты полилинии
         for (let i = 0; i < polylinePoints.length; i += 2) {
-            // const [x1, y1, x2, y2] = [polylinePoints[i], polylinePoints[i + 1], polylinePoints[i + 2], polylinePoints[i + 3]];
             const x1 = polylinePoints[i];
             const y1 = polylinePoints[i + 1];
             const x2 = polylinePoints[(i + 2) % polylinePoints.length]; // Используем модуль для замыкания
@@ -592,7 +652,7 @@ contentLayer.add(transformer);
 // Функция для переключения режимов
 function setMode(mode) {
     currentMode = mode;
-    stage.container().style.cursor = mode === 'drawPolyline' ? 'crosshair' : 'default';
+    stage.container().style.cursor = mode === 'drawPolyLine' ? 'crosshair' : 'default';
 
     if (mode === 'select') {
         enableSelectionMode();
@@ -698,32 +758,11 @@ function deleteSelectedElements() {
     contentLayer.draw(); // Обновляем слой для отражения изменений
 }
 
-function isLabel(element, lineLabelMap) {
-    for (const [, labelGroup] of lineLabelMap) {
-        if (labelGroup === element) {
-            return true; // Элемент найден среди подписей
-        }
-    }
-    return false; // Элемент не является подписью
-}
-
-function getLineForLabel(labelGroup, lineLabelMap) {
-    for (const [line, group] of lineLabelMap) {
-        if (group === labelGroup) {
-            return line; // Возвращаем линию, связанную с подписью
-        }
-    }
-    return null; // Если подпись не связана ни с одной линией
-}
-
 // Обработчик события нажатия клавиши Delete
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Delete') {
         if (currentMode === 'select') {
             if (selectedLabelGroup) {
-                console.log('Этот элемент является группой линий.', selectedLabelGroup);
-                console.log('LineMAP', lineLabelMap);
-
                 const lineForLabel = Array.from(lineLabelMap.entries()).find(
                     ([line, labelGroup]) => labelGroup === selectedLabelGroup
                 )?.[0];
@@ -748,7 +787,8 @@ window.addEventListener('keydown', (e) => {
             }
         }
     } else if (e.key === 'Escape') {
-        if (currentMode === 'addLineLabel') {
+        if (currentMode === 'addLineLabel' || currentMode === 'drawPolyLine') {
+            cancelPolylineDrawing();
             currentMode = 'select';
             setMode(currentMode);
             setActiveButton(selectToolButton);
@@ -764,6 +804,7 @@ function clearSelection() {
     });
     selectedShapes = []; // Очищаем массив выбранных объектов
     selectedLabelGroup = null;
+    selectedLineGroup = null;
     transformer.nodes([]); // Очищаем трансформер
     contentLayer.draw();
 }
@@ -805,25 +846,6 @@ contentLayer.on('dragmove', function () {
         contentLayer.batchDraw();
     }
 });
-
-function saveScene() {
-    const sceneJSON = stage.toJSON();
-    localStorage.setItem('konvaScene', JSON.stringify(sceneJSON));
-    console.log('Сцена сохранена в локальное хранилище',localStorage);
-}
-
-drawPol.addEventListener('click', () => setMode('drawPolyline'));
-// Привязываем запуск рисования полилинии к кнопке
-drawPol.addEventListener('click', startDrawingPolyline);
-// Привязка функции добавления линии к кнопке
-// drawLineButton.addEventListener('click', getAllObjects);
-// drawPol.addEventListener('click', addEditablePolyline);
-selectToolButton.addEventListener('click', () => setMode('select'));
-saveDataButton.addEventListener('click', saveScene);
-setMode('select')
-setActiveButton(selectToolButton);
-
-
 
 function orderVertices(linesWithLabels) {
     const vertices = [];
@@ -884,7 +906,9 @@ function calculateAreaFromScene() {
 
         // Вычисляем площадь
         const area = calculatePolygonAreaWithRealDimensions(vertices, realSideLengths).toFixed(2);
-
+        inputArea.value = area;
+        console.log(area);
+        current_area = area;
         console.log('Площадь фигуры:', area);
         return area;
     }
@@ -938,4 +962,118 @@ function calculatePolygonAreaWithRealDimensions(vertices, realSideLengths) {
     return Math.abs(area / 2);
 }
 
+function saveScene() {
+    // Сохраняем слои
+    // const gridLayerJSON = gridLayer.toJSON();
+    // const contentLayerJSON = contentLayer.toJSON();
+    const gridLayerJSON = JSON.parse(gridLayer.toJSON());
+    const contentLayerJSON = JSON.parse(contentLayer.toJSON());
+    console.log('LinelabelMap', lineLabelMap);
+    // Сохраняем Map как массив объектов
+    // const mapArray = Array.from(lineLabelMap.entries()).map(([lineId, labelId]) => ({ lineId, labelId }));
+    const mapArray = Array.from(lineLabelMap.entries()).map(([lineId, labelId]) => ({
+        lineId: JSON.parse(lineId.toJSON()), // Преобразуем lineId в объект
+        labelId: JSON.parse(labelId.toJSON()), // Преобразуем labelId в объект
+    }));
+
+    // Сохраняем всё в один объект
+    const sceneJSON = {
+        gridLayer: gridLayerJSON,
+        contentLayer: contentLayerJSON,
+        lineLabelMap: mapArray,
+    };
+
+    return sceneJSON;
+}
+
+// Получение CSRF-токена из cookie
+function getCSRFToken() {
+    let cookieValue = null;
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        // Проверяем наличие "csrftoken" в cookie
+        if (cookie.substring(0, 10) === 'csrftoken=') {
+        cookieValue = decodeURIComponent(cookie.substring(10));
+        break;
+        }
+    }
+    return cookieValue;
+}
+
+
+const confirmActionButton = document.getElementById('confirmAction');
+const confirmationModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+// Если пользователь подтверждает действие, выполняем отправку данных
+confirmActionButton.addEventListener('click', function() {
+    confirmationModal.hide(); // Закрываем модальное окно
+    sendCroppedImageToServer(); // Ваша функция отправки данных
+});
+
+function sendCroppedImageToServer() {
+    // current_area = calculateArea();
+    current_area = inputArea.value;
+    if (!current_area){
+        warningModal.show();
+        return;
+    }
+    let imageDataURL = stage.toDataURL({
+        mimeType: 'image/png', // Вы можете изменить на 'image/jpeg', если нужно
+        quality: 1,           // Качество (для JPEG)
+        pixelRatio: 1,        // Увеличение разрешения
+    });
+    // let imageDataURL = canvas.toDataURL({
+    //     format: 'png',
+    //     multiplier: 1 // Множитель для увеличения разрешения
+    // });
+    // let canvasData = canvas.toJSON();
+    let canvasData = saveScene(stage);
+    console.log(canvasData);
+    // console.log(imageDataURL);
+    const selectElement = document.getElementById('categorySelect');
+    // Получаем CSRF-токен
+    const csrftoken = getCSRFToken();
+    // Пример отправки изображения на сервер
+    imageDataURL = imageDataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
+    fetch('/upload-image', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ image: imageDataURL,
+                                area: parseFloat(inputArea.value),
+                                status: 'available',
+                                fabrictype_id: parseInt(selectElement.value),
+                                fabricview_id: parseInt(document.getElementById('viewSelect').value),
+                                canvas_data: canvasData,
+                                })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.redirect_url) {
+            // Если сервер вернул URL для редиректа, выполняем переход
+            window.location.href = data.redirect_url;
+        } else if (data.error) {
+            // Обработка ошибок, если есть
+            console.error(data.error);
+        }
+        console.log('Success:', data)})
+    .catch(error => console.error('Error:', error));
+}
+
+// Обработчик кнопки сохранения данных
+document.getElementById('saveData').addEventListener('click', function() {
+    confirmationModal.show();
+});
+// drawPol.addEventListener('click', () => setMode('drawPolyline'));
+// Привязываем запуск рисования полилинии к кнопке
+drawPol.addEventListener('click', startDrawingPolyline);
+// Привязка функции добавления линии к кнопке
+// drawPol.addEventListener('click', addEditablePolyline);
+// selectToolButton.addEventListener('click', () => setMode('select'));
+saveDataButton.addEventListener('click', saveScene);
+setMode(currentMode);
+setActiveButton(selectToolButton);
 calculateAreaButton.addEventListener('click', calculateAreaFromScene);

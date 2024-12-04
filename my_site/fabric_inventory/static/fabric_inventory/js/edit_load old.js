@@ -1,9 +1,8 @@
-const stage = new Konva.Stage({
-    container: 'canvasContainer',
-    width: 1300,
-    height: 750,
-});
+let canvas = new fabric.Canvas('canvas');
 let isFirstLoad = true;
+// Получение размеров canvas
+let canvasWidth = canvas.getWidth();
+let canvasHeight = canvas.getHeight();
 
 let currentArea = document.getElementById('area-data').textContent;
 document.getElementById('inputArea').value = parseFloat(currentArea.replace(',', '.'));
@@ -13,33 +12,6 @@ const currentViewId = document.getElementById('viewid-data').textContent;
 const currentStatusId = document.getElementById('status-data').textContent;
 console.log(currentStatusId);
 
-
-function loadScene() {
-    const sceneJSON = document.getElementById('canvas-data').textContent;
-    console.log('Row data', sceneJSON);
-    // Парсим JSON
-    const savedScene = JSON.parse(sceneJSON);
-    console.log(typeof savedScene);
-    // Восстанавливаем слои
-    const gridLayer = Konva.Node.create(savedScene.gridLayer);
-    const contentLayer = Konva.Node.create(savedScene.contentLayer);
-
-    // Очищаем существующие слои
-    stage.findOne('#gridLayer')?.destroy();
-    stage.findOne('#contentLayer')?.destroy();
-
-    // Добавляем восстановленные слои на сцену
-    stage.add(gridLayer);
-    stage.add(contentLayer);
-
-    // Восстанавливаем карту (Map)
-    const lineLabelMap = new Map();
-    savedScene.lineLabelMap.forEach(({ lineId, labelId }) => {
-        lineLabelMap.set(lineId, labelId);
-    });
-
-    return lineLabelMap;
-}
 // Восстановление canvas из JSON
 function loadCanvas() {
     let canvasData = document.getElementById('canvas-data').textContent;
@@ -59,7 +31,7 @@ function renderCanvas() {
     canvas.renderAll();
 }
 
-document.addEventListener("DOMContentLoaded",  loadScene);
+document.addEventListener("DOMContentLoaded",  loadCanvas);
 // document.addEventListener("DOMContentLoaded", renderCanvas);
 document.addEventListener('DOMContentLoaded', function () {
     const fabricTypeSelect = document.querySelector('[name="fabric_type"]');

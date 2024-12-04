@@ -72,7 +72,8 @@
         {{ fabric.fabric_view_id|json_script:"viewid-data" }}
         {{ fabric.status|json_script:"status-data" }}
         <div class="mb-3 mt-3">
-            <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas>
+            <div id="canvasContainer" class="" width="1300" height="750"></div>
+            <!-- <canvas id="canvas" width="1300" height="750" style="border: 1px solid black;"></canvas> -->
         </div>
     </form>
 </main>
