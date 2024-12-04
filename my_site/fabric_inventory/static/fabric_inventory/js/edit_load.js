@@ -13,16 +13,20 @@ const currentViewId = document.getElementById('viewid-data').textContent;
 const currentStatusId = document.getElementById('status-data').textContent;
 console.log(currentStatusId);
 
+let gridLayer = null;
+let contentLayer = null;
+let lineLabelMap = null;
 
 function loadScene() {
     const sceneJSON = document.getElementById('canvas-data').textContent;
     console.log('Row data', sceneJSON);
     // Парсим JSON
-    const savedScene = JSON.parse(sceneJSON);
-    console.log(typeof savedScene);
+    const savedScene = JSON.parse(JSON.parse(sceneJSON));
+    console.log(savedScene);
+    // console.log(JSON.parse(savedScene));
     // Восстанавливаем слои
-    const gridLayer = Konva.Node.create(savedScene.gridLayer);
-    const contentLayer = Konva.Node.create(savedScene.contentLayer);
+    gridLayer = Konva.Node.create(savedScene.gridLayer);
+    contentLayer = Konva.Node.create(savedScene.contentLayer);
 
     // Очищаем существующие слои
     stage.findOne('#gridLayer')?.destroy();
@@ -33,12 +37,12 @@ function loadScene() {
     stage.add(contentLayer);
 
     // Восстанавливаем карту (Map)
-    const lineLabelMap = new Map();
+    lineLabelMap = new Map();
     savedScene.lineLabelMap.forEach(({ lineId, labelId }) => {
         lineLabelMap.set(lineId, labelId);
     });
 
-    return lineLabelMap;
+    // return lineLabelMap;
 }
 // Восстановление canvas из JSON
 function loadCanvas() {

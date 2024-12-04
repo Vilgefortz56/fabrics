@@ -1,8 +1,8 @@
 stage.getContainer().style.border = '1px solid black';
-const gridLayer = new Konva.Layer();
-const contentLayer = new Konva.Layer();
-stage.add(gridLayer, contentLayer);
-
+// const gridLayer = new Konva.Layer();
+// const contentLayer = new Konva.Layer();
+// stage.add(gridLayer, contentLayer);
+console.log('contentLayer', contentLayer);
 let isSelectMode = false;
 let gridSize = parseInt(document.getElementById('gridSize').value) || 50;
 
@@ -19,7 +19,7 @@ function drawGrid(gridSize) {
     }
     gridLayer.draw();
 }
-drawGrid(gridSize);
+// drawGrid(gridSize);
 
 document.getElementById('gridSize').addEventListener('input', function() {
     gridSize = parseInt(this.value);
@@ -224,7 +224,7 @@ function getLineCoordinates(line) {
 }
 
 let isAddingLabels = false; 
-let lineLabelMap = new Map();
+// let lineLabelMap = new Map();
 
 function addLabelToLine(line) {
     if (lineLabelMap.has(line)) {
