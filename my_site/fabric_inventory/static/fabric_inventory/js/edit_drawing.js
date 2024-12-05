@@ -950,14 +950,14 @@ function getCSRFToken() {
 }
 
 
-const confirmActionButton = document.getElementById('confirmAction');
-const confirmationModal = new bootstrap.Modal(document.getElementById('confirmModal'));
-const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
-// Если пользователь подтверждает действие, выполняем отправку данных
-confirmActionButton.addEventListener('click', function() {
-    confirmationModal.hide(); // Закрываем модальное окно
-    sendCroppedImageToServer(); // Ваша функция отправки данных
-});
+// const confirmActionButton = document.getElementById('confirmAction');
+// const confirmationModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+// const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+// // Если пользователь подтверждает действие, выполняем отправку данных
+// confirmActionButton.addEventListener('click', function() {
+//     confirmationModal.hide(); // Закрываем модальное окно
+//     sendCroppedImageToServer(); // Ваша функция отправки данных
+// });
 
 function sendCroppedImageToServer() {
     // current_area = calculateArea();
@@ -1012,9 +1012,9 @@ function sendCroppedImageToServer() {
 }
 
 // Обработчик кнопки сохранения данных
-document.getElementById('saveData').addEventListener('click', function() {
-    confirmationModal.show();
-});
+// document.getElementById('saveData').addEventListener('click', function() {
+//     confirmationModal.show();
+// });
 // drawPol.addEventListener('click', () => setMode('drawPolyline'));
 // Привязываем запуск рисования полилинии к кнопке
 drawPol.addEventListener('click', startDrawingPolyline);
@@ -1025,3 +1025,284 @@ saveDataButton.addEventListener('click', saveScene);
 setMode(currentMode);
 setActiveButton(selectToolButton);
 calculateAreaButton.addEventListener('click', calculateAreaFromScene);
+
+function restoreSceneFunctionality() {
+    contentLayer.find('Group').forEach((group) => {
+        const line = group.findOne('Line');
+
+        if (line) {
+            const startAnchor = group.findOne('Circle:first-child');
+            const endAnchor = group.findOne('Circle:last-child');
+            const boundingBox = group.findOne('Line:last-child');
+
+            // Восстанавливаем поведение линии
+            line.on('mouseenter', () => {
+                boundingBox.visible(true);
+                contentLayer.draw();
+            });
+
+            line.on('mouseleave', () => {
+                if (!startAnchor.visible()) {
+                    boundingBox.visible(false);
+                    contentLayer.draw();
+                }
+            });
+
+            line.on('click', () => {
+                if (selectedLineGroup) {
+                    const prevStartAnchor = selectedLineGroup.findOne('Circle');
+                    const prevEndAnchor = selectedLineGroup.findOne('Circle:last-child');
+
+                    if (prevStartAnchor) prevStartAnchor.visible(false);
+                    if (prevEndAnchor) prevEndAnchor.visible(false);
+                }
+
+                selectedLineGroup = group;
+                group.moveToTop();
+                boundingBox.visible(true);
+                startAnchor.visible(true);
+                endAnchor.visible(true);
+                contentLayer.draw();
+            });
+
+            group.on('dragmove', () => {
+                const snappedPos = snapToGridPosition(group.position());
+                group.position(snappedPos);
+                updateLine(group);
+            });
+
+            startAnchor.on('dragmove', function () {
+                this.position(snapToGridPosition(this.position()));
+                updateLine(group);
+            });
+
+            endAnchor.on('dragmove', function () {
+                this.position(snapToGridPosition(this.position()));
+                updateLine(group);
+            });
+        }
+
+        // Если у группы есть подпись, восстанавливаем её функционал
+        const labelGroup = lineLabelMap.get(group);
+        if (labelGroup) {
+            const label = labelGroup.findOne('Text');
+            const labelBorder = labelGroup.findOne('Rect');
+
+            label.on('mouseenter', () => {
+                labelBorder.visible(true);
+                contentLayer.batchDraw();
+            });
+
+            label.on('mouseleave', () => {
+                labelBorder.visible(false);
+                contentLayer.batchDraw();
+            });
+
+            label.on('dblclick dbltap', () => {
+                label.hide();
+                contentLayer.draw();
+
+                const textPosition = label.absolutePosition();
+                const stageContainer = stage.container();
+                const areaPosition = {
+                    x: stageContainer.offsetLeft + textPosition.x,
+                    y: stageContainer.offsetTop - 6 + textPosition.y,
+                };
+
+                const textarea = document.createElement('textarea');
+                document.body.appendChild(textarea);
+
+                textarea.value = label.text();
+                textarea.style.position = 'absolute';
+                textarea.style.top = `${areaPosition.y}px`;
+                textarea.style.left = `${areaPosition.x}px`;
+                textarea.style.width = `${label.width() - label.padding() * 2 + 100}px`;
+                textarea.style.height = `${label.height() - label.padding() * 2 + 10}px`;
+                textarea.style.fontSize = `${label.fontSize()}px`;
+                textarea.style.fontFamily = label.fontFamily();
+                textarea.style.color = label.fill();
+                textarea.style.border = 'none';
+                textarea.style.background = 'none';
+                textarea.style.outline = 'none';
+                textarea.style.overflow = 'hidden';
+                textarea.style.padding = '0px';
+                textarea.style.margin = '0px';
+                textarea.style.resize = 'none';
+                textarea.style.zIndex = '1000';
+                textarea.focus();
+                textarea.select();
+
+                let isTextareaRemoved = false;
+
+                function removeTextarea() {
+                    if (isTextareaRemoved) return;
+                    isTextareaRemoved = true;
+                    document.body.removeChild(textarea);
+
+                    const newText = textarea.value.trim();
+                    if (newText === '') {
+                        labelGroup.destroy();
+                        lineLabelMap.delete(group);
+                    } else {
+                        label.text(newText);
+                        label.show();
+                    }
+                    contentLayer.draw();
+                }
+
+                textarea.addEventListener('blur', removeTextarea);
+
+                textarea.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        removeTextarea();
+                    }
+                });
+            });
+        }
+    });
+
+    contentLayer.draw();
+}
+
+
+function restoreEditableLine(lineGroup) {
+    console.log('LINE', lineGroup);
+    const children = lineGroup.getChildren();
+    // const line = lineGroup.findOne('Line');
+    // const startAnchor = lineGroup.findOne('Circle');
+    // const endAnchor = lineGroup.findOne('Circle:last-child');
+    // const boundingBox = lineGroup.findOne('Line:last-child');
+
+    const line = lineGroup.findOne((node) => node.getClassName() === 'Line' && !node.attrs.stroke.includes('rgba'));
+    const boundingBox = lineGroup.findOne((node) => node.getClassName() === 'Line' && node.attrs.stroke.includes('rgba'));
+    const startAnchor = lineGroup.findOne((node) => node.getClassName() === 'Circle' && node.index === 0);
+    const endAnchor = lineGroup.findOne((node) => node.getClassName() === 'Circle' && node.index === lineGroup.getChildren().length - 1);
+
+    let labelGroup = lineLabelMap.get(lineGroup);
+
+    if (!line || !startAnchor || !endAnchor || !boundingBox) {
+        console.log('Невозможно восстановить линию.');
+        return;
+    }
+    function snapToGridPosition(pos) {
+        return {
+            x: snapToGrid(pos.x, gridSize),
+            y: snapToGrid(pos.y, gridSize),
+        };
+    }
+    function updateLine() {
+        const points = [startAnchor.x(), startAnchor.y(), endAnchor.x(), endAnchor.y()];
+        line.points(points);
+        boundingBox.points(points);
+
+        if (labelGroup) {
+            const midpointX = (points[0] + points[2]) / 2;
+            const midpointY = (points[1] + points[3]) / 2;
+
+            labelGroup.position({
+                x: midpointX,
+                y: midpointY,
+            });
+        }
+
+        contentLayer.draw();
+    }
+
+    line.on('mouseenter', () => {
+        boundingBox.visible(true);
+        contentLayer.draw();
+    });
+
+    line.on('mouseleave', () => {
+        if (!startAnchor.visible()) {
+            boundingBox.visible(false);
+            contentLayer.draw();
+        }
+    });
+
+    line.on('click', () => {
+        if (selectedLineGroup) {
+            const prevStartAnchor = selectedLineGroup.findOne('Circle');
+            const prevEndAnchor = selectedLineGroup.findOne('Circle:last-child');
+
+            if (prevStartAnchor) prevStartAnchor.visible(false);
+            if (prevEndAnchor) prevEndAnchor.visible(false);
+        }
+        selectedLineGroup = lineGroup;
+        lineGroup.moveToTop();
+        boundingBox.visible(true);
+        startAnchor.visible(true);
+        endAnchor.visible(true);
+        contentLayer.draw();
+    });
+
+    startAnchor.on('dragmove', function () {
+        this.position(snapToGridPosition(this.position()));
+        updateLine();
+    });
+
+    endAnchor.on('dragmove', function () {
+        this.position(snapToGridPosition(this.position()));
+        updateLine();
+    });
+
+    lineGroup.on('dragmove', function () {
+        const snappedPos = snapToGridPosition(lineGroup.position());
+        lineGroup.position(snappedPos);
+        updateLine();
+    });
+}
+
+function restoreLabel(lineGroup) {
+    const labelGroup = lineLabelMap.get(lineGroup);
+    console.log('LABEL', labelGroup);
+    if (!labelGroup) {
+        console.log('Невозможно восстановить подпись.');
+        return;
+    }
+
+    const label = labelGroup.findOne('Text');
+    const labelBorder = labelGroup.findOne('Rect');
+
+    label.on('click', () => {
+        selectedLabelGroup = labelGroup;
+        contentLayer.draw();
+    });
+
+    label.on('textChange', () => {
+        labelBorder.width(label.width());
+        labelBorder.height(label.height());
+    });
+
+    label.on('dragmove', () => {
+        labelBorder.position(label.position());
+        contentLayer.batchDraw();
+    });
+
+    label.on('mouseenter', () => {
+        labelBorder.visible(true);
+        contentLayer.batchDraw();
+    });
+
+    label.on('mouseleave', () => {
+        labelBorder.visible(false);
+        contentLayer.batchDraw();
+    });
+
+    label.on('dblclick dbltap', () => {
+        // Вставьте обработчик редактирования текста
+    });
+}
+// let q = 0;
+// console.log('stage.find', contentLayer.getChildren());
+// const filteredObjects = contentLayer.getChildren().filter(item => item.nodeType === 'Group');
+// console.log('filteredObjects', filteredObjects);
+// contentLayer.find('Group').forEach((group) => {
+//     console.log('group', group);
+//     // q += 1;
+//     // console.log('q=', q);
+//     // restoreEditableLine(group);
+//     // restoreLabel(group);
+// });
+
+restoreSceneFunctionality();

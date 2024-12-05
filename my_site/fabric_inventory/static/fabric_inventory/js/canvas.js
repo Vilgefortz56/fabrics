@@ -124,7 +124,9 @@ let selectedLabelGroup = null;
 function addEditableLine(startX, startY, endX, endY) {
     console.log('Creating line from', startX, startY, 'to', endX, endY);
 
-    const lineGroup = new Konva.Group({ draggable: true, name: 'selectable' });
+    // const lineGroup = new Konva.Group({ draggable: true, name: 'selectable' });
+    const lineId = `line-${Date.now()}-${Math.random()}`;
+    const lineGroup = new Konva.Group({ draggable: true, name: 'selectable', id: lineId });
 
     const line = new Konva.Line({
         points: [startX, startY, endX, endY],
@@ -278,6 +280,12 @@ function addLabelToLine(line) {
         return;
     }
 
+    const labelId = `label-${Date.now()}-${Math.random()}`;
+    const labelGroup = new Konva.Group({
+        draggable: true,
+        name: 'labelGroup',
+        id: labelId,
+    });
     const lineGroup = line.getParent();
     console.log('lineGroup', lineGroup);
     const linePoints = getLineCoordinates(line);
@@ -286,12 +294,12 @@ function addLabelToLine(line) {
     const midpointY = (linePoints[1] + linePoints[3]) / 2;
 
     // Создаем группу для подписи
-    const labelGroup = new Konva.Group({
-        x: midpointX,
-        y: midpointY,
-        draggable: true,
-        name: 'labelGroup',
-    });
+    // const labelGroup = new Konva.Group({
+    //     x: midpointX,
+    //     y: midpointY,
+    //     draggable: true,
+    //     name: 'labelGroup',
+    // });
 
     // Текстовая подпись
     const label = new Konva.Text({
@@ -962,18 +970,37 @@ function calculatePolygonAreaWithRealDimensions(vertices, realSideLengths) {
     return Math.abs(area / 2);
 }
 
+// function saveScene() {
+//     // Сохраняем слои
+//     // const gridLayerJSON = gridLayer.toJSON();
+//     // const contentLayerJSON = contentLayer.toJSON();
+//     const gridLayerJSON = JSON.parse(gridLayer.toJSON());
+//     const contentLayerJSON = JSON.parse(contentLayer.toJSON());
+//     console.log('LinelabelMap', lineLabelMap);
+//     // Сохраняем Map как массив объектов
+//     // const mapArray = Array.from(lineLabelMap.entries()).map(([lineId, labelId]) => ({ lineId, labelId }));
+//     const mapArray = Array.from(lineLabelMap.entries()).map(([lineId, labelId]) => ({
+//         lineId: JSON.parse(lineId.toJSON()), // Преобразуем lineId в объект
+//         labelId: JSON.parse(labelId.toJSON()), // Преобразуем labelId в объект
+//     }));
+    
+//     // Сохраняем всё в один объект
+//     const sceneJSON = {
+//         gridLayer: gridLayerJSON,
+//         contentLayer: contentLayerJSON,
+//         lineLabelMap: mapArray,
+//     };
+
+//     return sceneJSON;
+// }
 function saveScene() {
-    // Сохраняем слои
-    // const gridLayerJSON = gridLayer.toJSON();
-    // const contentLayerJSON = contentLayer.toJSON();
     const gridLayerJSON = JSON.parse(gridLayer.toJSON());
     const contentLayerJSON = JSON.parse(contentLayer.toJSON());
-    console.log('LinelabelMap', lineLabelMap);
-    // Сохраняем Map как массив объектов
-    // const mapArray = Array.from(lineLabelMap.entries()).map(([lineId, labelId]) => ({ lineId, labelId }));
-    const mapArray = Array.from(lineLabelMap.entries()).map(([lineId, labelId]) => ({
-        lineId: JSON.parse(lineId.toJSON()), // Преобразуем lineId в объект
-        labelId: JSON.parse(labelId.toJSON()), // Преобразуем labelId в объект
+
+    // Генерируем Map как массив объектов
+    const mapArray = Array.from(lineLabelMap.entries()).map(([line, label]) => ({
+        lineId:  line.attrs.id,
+        labelId: label.attrs.id,
     }));
 
     // Сохраняем всё в один объект
@@ -985,6 +1012,8 @@ function saveScene() {
 
     return sceneJSON;
 }
+
+
 
 // Получение CSRF-токена из cookie
 function getCSRFToken() {

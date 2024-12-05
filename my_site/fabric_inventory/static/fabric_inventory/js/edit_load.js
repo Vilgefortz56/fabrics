@@ -17,13 +17,41 @@ let gridLayer = null;
 let contentLayer = null;
 let lineLabelMap = null;
 
+// function loadScene() {
+//     const sceneJSON = document.getElementById('canvas-data').textContent;
+//     console.log('Row data', sceneJSON);
+//     // Парсим JSON
+//     const savedScene = JSON.parse(JSON.parse(sceneJSON));
+//     console.log(savedScene);
+//     // console.log(JSON.parse(savedScene));
+//     // Восстанавливаем слои
+//     gridLayer = Konva.Node.create(savedScene.gridLayer);
+//     contentLayer = Konva.Node.create(savedScene.contentLayer);
+
+//     // Очищаем существующие слои
+//     stage.findOne('#gridLayer')?.destroy();
+//     stage.findOne('#contentLayer')?.destroy();
+
+//     // Добавляем восстановленные слои на сцену
+//     stage.add(gridLayer);
+//     stage.add(contentLayer);
+
+//     // Восстанавливаем карту (Map)
+//     lineLabelMap = new Map();
+//     savedScene.lineLabelMap.forEach(({ lineId, labelId }) => {
+//         lineLabelMap.set(lineId, labelId);
+//     });
+//     console.log(lineLabelMap);
+//     // return lineLabelMap;
+// }
+
 function loadScene() {
     const sceneJSON = document.getElementById('canvas-data').textContent;
-    console.log('Row data', sceneJSON);
+    console.log('Raw data', sceneJSON);
+
     // Парсим JSON
     const savedScene = JSON.parse(JSON.parse(sceneJSON));
-    console.log(savedScene);
-    // console.log(JSON.parse(savedScene));
+    console.log('DATA', savedScene);
     // Восстанавливаем слои
     gridLayer = Konva.Node.create(savedScene.gridLayer);
     contentLayer = Konva.Node.create(savedScene.contentLayer);
@@ -36,32 +64,25 @@ function loadScene() {
     stage.add(gridLayer);
     stage.add(contentLayer);
 
-    // Восстанавливаем карту (Map)
+    // Восстанавливаем карту lineLabelMap
     lineLabelMap = new Map();
+
     savedScene.lineLabelMap.forEach(({ lineId, labelId }) => {
-        lineLabelMap.set(lineId, labelId);
+        const lineNode = contentLayer.findOne(`#${lineId.id}`);
+        const labelNode = contentLayer.findOne(`#${labelId.id}`);
+
+        if (lineNode && labelNode) {
+            lineLabelMap.set(lineNode, labelNode);
+        } else {
+            console.warn('Не удалось найти объекты для восстановления связи:', lineId, labelId);
+        }
     });
 
-    // return lineLabelMap;
-}
-// Восстановление canvas из JSON
-function loadCanvas() {
-    let canvasData = document.getElementById('canvas-data').textContent;
-    if (canvasData) {
-            let parsedData = JSON.parse(canvasData);
-            canvas.loadFromJSON(parsedData, function()  {
-                // Принудительно обновляем canvas
-                canvas.requestRenderAll();
-                // transformPolygonToLine();
-            });
-    } else {
-        alert("No saved drawing found.");
-    }
+    console.log('Восстановленный lineLabelMap:', lineLabelMap);
+
+    contentLayer.draw();
 }
 
-function renderCanvas() {
-    canvas.renderAll();
-}
 
 document.addEventListener("DOMContentLoaded",  loadScene);
 // document.addEventListener("DOMContentLoaded", renderCanvas);
