@@ -17,33 +17,26 @@ let gridLayer = null;
 let contentLayer = null;
 let lineLabelMap = null;
 
-// function loadScene() {
-//     const sceneJSON = document.getElementById('canvas-data').textContent;
-//     console.log('Row data', sceneJSON);
-//     // Парсим JSON
-//     const savedScene = JSON.parse(JSON.parse(sceneJSON));
-//     console.log(savedScene);
-//     // console.log(JSON.parse(savedScene));
-//     // Восстанавливаем слои
-//     gridLayer = Konva.Node.create(savedScene.gridLayer);
-//     contentLayer = Konva.Node.create(savedScene.contentLayer);
 
-//     // Очищаем существующие слои
-//     stage.findOne('#gridLayer')?.destroy();
-//     stage.findOne('#contentLayer')?.destroy();
+function saveScene() {
+    const gridLayerJSON = JSON.parse(gridLayer.toJSON());
+    const contentLayerJSON = JSON.parse(contentLayer.toJSON());
 
-//     // Добавляем восстановленные слои на сцену
-//     stage.add(gridLayer);
-//     stage.add(contentLayer);
+    // Генерируем Map как массив объектов
+    const mapArray = Array.from(lineLabelMap.entries()).map(([line, label]) => ({
+        lineId:  line,
+        labelId: label,
+    }));
+    console.log(lineLabelMap);
+    // Сохраняем всё в один объект
+    const sceneJSON = {
+        gridLayer: gridLayerJSON,
+        contentLayer: contentLayerJSON,
+        lineLabelMap: mapArray,
+    };
 
-//     // Восстанавливаем карту (Map)
-//     lineLabelMap = new Map();
-//     savedScene.lineLabelMap.forEach(({ lineId, labelId }) => {
-//         lineLabelMap.set(lineId, labelId);
-//     });
-//     console.log(lineLabelMap);
-//     // return lineLabelMap;
-// }
+    return sceneJSON;
+}
 
 function loadScene() {
     const sceneJSON = document.getElementById('canvas-data').textContent;
@@ -67,19 +60,21 @@ function loadScene() {
     // Восстанавливаем карту lineLabelMap
     lineLabelMap = new Map();
 
+    // savedScene.lineLabelMap.forEach(({ lineId, labelId }) => {
+    //     console.log('lineId', lineId);
+    //     console.log('labelId', labelId);
+    //     const lineNode = contentLayer.findOne(`#${lineId}`);
+    //     const labelNode = contentLayer.findOne(`#${labelId}`);
+
+    //     if (lineNode && labelNode) {
+    //         lineLabelMap.set(lineNode, labelNode);
+    //     } else {
+    //         console.warn('Не удалось найти объекты для восстановления связи:', lineId, labelId);
+    //     }
+    // });
     savedScene.lineLabelMap.forEach(({ lineId, labelId }) => {
-        const lineNode = contentLayer.findOne(`#${lineId.id}`);
-        const labelNode = contentLayer.findOne(`#${labelId.id}`);
-
-        if (lineNode && labelNode) {
-            lineLabelMap.set(lineNode, labelNode);
-        } else {
-            console.warn('Не удалось найти объекты для восстановления связи:', lineId, labelId);
-        }
+        lineLabelMap.set(lineId, labelId);
     });
-
-    console.log('Восстановленный lineLabelMap:', lineLabelMap);
-
     contentLayer.draw();
 }
 
@@ -103,17 +98,15 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    form.addEventListener('submit', function(event) {
-        customCanvas = canvas.toObject();
-        customCanvas.lines_with_labels = linesWithLabels;
+    form.addEventListener('submit', function() {
         // Преобразуем данные canvas в JSON и записываем в скрытое поле
-        const serializedCanvasData = JSON.stringify(customCanvas);
-        console.log(customCanvas);
-        console.log(serializedCanvasData);
-        hiddenCanvasDataInput.value = serializedCanvasData;
-        let imageDataURL = canvas.toDataURL({
-            format: 'png',
-            multiplier: 1 // Множитель для увеличения разрешения
+        const serializedData = saveScene();
+        console.log(serializedData);
+        hiddenCanvasDataInput.value = JSON.stringify(serializedData);
+        let imageDataURL = stage.toDataURL({
+            mimeType: 'image/png', // Вы можете изменить на 'image/jpeg', если нужно
+            quality: 1,           // Качество (для JPEG)
+            pixelRatio: 1,        // Увеличение разрешения
         });
         document.getElementById('editImage').value = imageDataURL;
     });

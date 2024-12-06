@@ -162,22 +162,29 @@ function addEditableLine(startX, startY, endX, endY) {
         }
     });
 
-    line.on('click', () => {
-        if (selectedLineGroup) {
-            const prevLine = selectedLineGroup.findOne('Line');
-            const prevStartAnchor = selectedLineGroup.findOne('Circle');
-            const prevEndAnchor = selectedLineGroup.findOne('Circle:last-child');
+    line.on('click', (e) => {
+        e.cancelBubble = true;
+        if (currentMode === 'addLineLabel') {
+            addLabelToLine(line);
+            return;
+        } else if (currentMode === 'select') {
+            if (selectedLineGroup) {
+                const prevLine = selectedLineGroup.findOne('Line');
+                const prevStartAnchor = selectedLineGroup.findOne('Circle');
+                const prevEndAnchor = selectedLineGroup.findOne('Circle:last-child');
 
-            // if (prevLine) prevLine.stroke('black');
-            if (prevStartAnchor) prevStartAnchor.visible(false);
-            if (prevEndAnchor) prevEndAnchor.visible(false);
+                // if (prevLine) prevLine.stroke('black');
+                if (prevStartAnchor) prevStartAnchor.visible(false);
+                if (prevEndAnchor) prevEndAnchor.visible(false);
+            }
+            selectedLineGroup = lineGroup;
+            lineGroup.moveToTop();
+            boundingBox.visible(true);
+            startAnchor.visible(true);
+            endAnchor.visible(true);
+            contentLayer.draw();
+            stage.setAttr('clickedOnLine', true);
         }
-        selectedLineGroup = lineGroup;
-        lineGroup.moveToTop();
-        boundingBox.visible(true);
-        startAnchor.visible(true);
-        endAnchor.visible(true);
-        contentLayer.draw();
     });
 
     stage.on('click', (e) => {
@@ -227,7 +234,7 @@ let isAddingLabels = false;
 // let lineLabelMap = new Map();
 
 function addLabelToLine(line) {
-    if (lineLabelMap.has(line)) {
+    if (lineLabelMap.has(line.getParent().id())) {
         alert('У этой линии уже есть подпись.');
         return;
     }
@@ -252,7 +259,7 @@ function addLabelToLine(line) {
         text: 'Подпись',
         x: 0,
         y: 0,
-        fontSize: 22,
+        fontSize: 30,
         fontFamily: 'Times New Roman',
         fill: 'black',
         draggable: true,
@@ -301,23 +308,6 @@ function addLabelToLine(line) {
         contentLayer.batchDraw();
     });
 
-    // line.on('remove', () => {
-    //     if (lineLabelMap.has(line)) {
-    //         const labelGroup = lineLabelMap.get(line);
-    //         labelGroup.destroy(); // Удаляем подпись
-    //         lineLabelMap.delete(line); // Удаляем запись из Map
-    //         contentLayer.draw();
-    //     }
-    // });
-    lineGroup.on('remove', () => {
-        console.log('Удолила линию.');
-        if (lineLabelMap.has(lineGroup)) {
-            const labelGroup = lineLabelMap.get(lineGroup);
-            labelGroup.destroy(); // Удаляем подпись
-            lineLabelMap.delete(lineGroup); // Удаляем запись из Map
-            contentLayer.draw();
-        }
-    });
 
     label.on('dblclick dbltap', () => {
         // Скрываем текст
@@ -389,7 +379,7 @@ function addLabelToLine(line) {
     labelGroup.add(label);
     // Добавление на слой
     contentLayer.add(labelGroup);
-    lineLabelMap.set(lineGroup, labelGroup);
+    lineLabelMap.set(lineGroup.id(), labelGroup.id());
     contentLayer.draw();
 }
 
@@ -718,7 +708,7 @@ window.addEventListener('keydown', (e) => {
         if (currentMode === 'select') {
             if (selectedLabelGroup) {
                 const lineForLabel = Array.from(lineLabelMap.entries()).find(
-                    ([line, labelGroup]) => labelGroup === selectedLabelGroup
+                    ([line, labelGroup]) => labelGroup.id() === selectedLabelGroup.id()
                 )?.[0];
                 if (!lineForLabel) {
                     console.log('Пиздец');
@@ -729,10 +719,10 @@ window.addEventListener('keydown', (e) => {
                 clearSelection();
                 contentLayer.draw();
             } else if (selectedLineGroup) {
-                const labelGroupForLine = lineLabelMap.get(selectedLineGroup);
+                const labelGroupForLine = lineLabelMap.get(selectedLineGroup.id());
                 selectedLineGroup.destroy();  
                 labelGroupForLine.destroy();
-                lineLabelMap.delete(selectedLineGroup);
+                lineLabelMap.delete(selectedLineGroup.id());
                 selectedLineGroup = null;  
                 clearSelection();
                 contentLayer.draw();
@@ -766,12 +756,23 @@ function clearSelection() {
 // Обработчик для снятия выделения при клике за пределами объектов
 stage.on('click', (e) => {
     const clickedOutsideSelection = e.target === stage || e.target === contentLayer;
-    
+    const clickedNode = e.target;
+    console.log('clickedOutsideSelection', clickedOutsideSelection);
+    console.log(stage.getAttr('clickedOnLine'));
+    console.log('clickedNode', clickedNode);
     if (clickedOutsideSelection) {
+        if (stage.getAttr('clickedOnLine') && selectedLineGroup) {
+            stage.setAttr('clickedOnLine', false);
+            selectedLineGroup.findOne('.boundingBox').visible(false);
+            selectedLineGroup.findOne('.startAnchor').visible(false);
+            selectedLineGroup.findOne('.endAnchor').visible(false);
+            selectedLineGroup = null;
+            contentLayer.draw();
+        }   
         clearSelection();
+        return;
     }
 });
-
 
 // Функция для выделения группы объектов
 function selectShapes(shapes) {
@@ -825,19 +826,24 @@ function orderVertices(linesWithLabels) {
 
 function getLinesWithLabels() {
     const linesWithLabels = [];
-
-    // Перебираем все группы (линии с их элементами)
+    console.log(lineLabelMap);
+    // Перебираем все группы линий
     contentLayer.find('Group').forEach(group => {
-        const line = group.findOne('Line');
-        const label = lineLabelMap.get(group); // Подпись связана с группой
+        const line = group.findOne('Line'); // Находим линию в группе
+        const lineId = group.id(); // ID текущей группы линии
 
-        if (line && label) {
+        // Ищем подпись в lineLabelMap
+        const labelId = lineLabelMap.get(lineId); // Получаем ID связанной подписи
+        const labelGroup = labelId ? contentLayer.findOne(`#${labelId}`) : null; // Находим группу подписи по ID
+
+        if (line && labelGroup) {
             const points = line.points(); // Координаты линии
+            const labelText = labelGroup.findOne('Text'); // Находим текст подписи внутри группы
             linesWithLabels.push({
                 index: group.getAttr('index') || 0, // Индекс группы
                 point1: { x: points[0], y: points[1] }, // Начальная точка
                 point2: { x: points[2], y: points[3] }, // Конечная точка
-                label_obj: label.findOne('Text'), // Объект подписи
+                label_obj: labelText, // Объект текста подписи
             });
         }
     });
@@ -916,39 +922,6 @@ function calculatePolygonAreaWithRealDimensions(vertices, realSideLengths) {
     return Math.abs(area / 2);
 }
 
-function saveScene(stage) {
-    // Сохраняем слои
-    const gridLayerJSON = gridLayer.toJSON();
-    const contentLayerJSON = contentLayer.toJSON();
-    console.log('LinelabelMap', lineLabelMap);
-    // Сохраняем Map как массив объектов
-    const mapArray = Array.from(lineLabelMap.entries()).map(([lineId, labelId]) => ({ lineId, labelId }));
-
-    // Сохраняем всё в один объект
-    const sceneJSON = JSON.stringify({
-        gridLayer: gridLayerJSON,
-        contentLayer: contentLayerJSON,
-        lineLabelMap: mapArray,
-    });
-
-    return sceneJSON;
-}
-
-// Получение CSRF-токена из cookie
-function getCSRFToken() {
-    let cookieValue = null;
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        // Проверяем наличие "csrftoken" в cookie
-        if (cookie.substring(0, 10) === 'csrftoken=') {
-        cookieValue = decodeURIComponent(cookie.substring(10));
-        break;
-        }
-    }
-    return cookieValue;
-}
-
 
 // const confirmActionButton = document.getElementById('confirmAction');
 // const confirmationModal = new bootstrap.Modal(document.getElementById('confirmModal'));
@@ -959,57 +932,6 @@ function getCSRFToken() {
 //     sendCroppedImageToServer(); // Ваша функция отправки данных
 // });
 
-function sendCroppedImageToServer() {
-    // current_area = calculateArea();
-    current_area = inputArea.value;
-    if (!current_area){
-        warningModal.show();
-        return;
-    }
-    let imageDataURL = stage.toDataURL({
-        mimeType: 'image/png', // Вы можете изменить на 'image/jpeg', если нужно
-        quality: 1,           // Качество (для JPEG)
-        pixelRatio: 1,        // Увеличение разрешения
-    });
-    // let imageDataURL = canvas.toDataURL({
-    //     format: 'png',
-    //     multiplier: 1 // Множитель для увеличения разрешения
-    // });
-    // let canvasData = canvas.toJSON();
-    let canvasData = saveScene(stage);
-    console.log(canvasData);
-    // console.log(imageDataURL);
-    const selectElement = document.getElementById('categorySelect');
-    // Получаем CSRF-токен
-    const csrftoken = getCSRFToken();
-    // Пример отправки изображения на сервер
-    imageDataURL = imageDataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
-    fetch('/upload-image', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken
-        },
-        body: JSON.stringify({ image: imageDataURL,
-                                area: parseFloat(inputArea.value),
-                                status: 'available',
-                                fabrictype_id: parseInt(selectElement.value),
-                                fabricview_id: parseInt(document.getElementById('viewSelect').value),
-                                canvas_data: canvasData,
-                                })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.redirect_url) {
-            // Если сервер вернул URL для редиректа, выполняем переход
-            window.location.href = data.redirect_url;
-        } else if (data.error) {
-            // Обработка ошибок, если есть
-            console.error(data.error);
-        }
-        console.log('Success:', data)})
-    .catch(error => console.error('Error:', error));
-}
 
 // Обработчик кнопки сохранения данных
 // document.getElementById('saveData').addEventListener('click', function() {
@@ -1021,162 +943,17 @@ drawPol.addEventListener('click', startDrawingPolyline);
 // Привязка функции добавления линии к кнопке
 // drawPol.addEventListener('click', addEditablePolyline);
 // selectToolButton.addEventListener('click', () => setMode('select'));
-saveDataButton.addEventListener('click', saveScene);
+// saveDataButton.addEventListener('click', saveScene);
 setMode(currentMode);
 setActiveButton(selectToolButton);
 calculateAreaButton.addEventListener('click', calculateAreaFromScene);
 
-function restoreSceneFunctionality() {
-    contentLayer.find('Group').forEach((group) => {
-        const line = group.findOne('Line');
-
-        if (line) {
-            const startAnchor = group.findOne('Circle:first-child');
-            const endAnchor = group.findOne('Circle:last-child');
-            const boundingBox = group.findOne('Line:last-child');
-
-            // Восстанавливаем поведение линии
-            line.on('mouseenter', () => {
-                boundingBox.visible(true);
-                contentLayer.draw();
-            });
-
-            line.on('mouseleave', () => {
-                if (!startAnchor.visible()) {
-                    boundingBox.visible(false);
-                    contentLayer.draw();
-                }
-            });
-
-            line.on('click', () => {
-                if (selectedLineGroup) {
-                    const prevStartAnchor = selectedLineGroup.findOne('Circle');
-                    const prevEndAnchor = selectedLineGroup.findOne('Circle:last-child');
-
-                    if (prevStartAnchor) prevStartAnchor.visible(false);
-                    if (prevEndAnchor) prevEndAnchor.visible(false);
-                }
-
-                selectedLineGroup = group;
-                group.moveToTop();
-                boundingBox.visible(true);
-                startAnchor.visible(true);
-                endAnchor.visible(true);
-                contentLayer.draw();
-            });
-
-            group.on('dragmove', () => {
-                const snappedPos = snapToGridPosition(group.position());
-                group.position(snappedPos);
-                updateLine(group);
-            });
-
-            startAnchor.on('dragmove', function () {
-                this.position(snapToGridPosition(this.position()));
-                updateLine(group);
-            });
-
-            endAnchor.on('dragmove', function () {
-                this.position(snapToGridPosition(this.position()));
-                updateLine(group);
-            });
-        }
-
-        // Если у группы есть подпись, восстанавливаем её функционал
-        const labelGroup = lineLabelMap.get(group);
-        if (labelGroup) {
-            const label = labelGroup.findOne('Text');
-            const labelBorder = labelGroup.findOne('Rect');
-
-            label.on('mouseenter', () => {
-                labelBorder.visible(true);
-                contentLayer.batchDraw();
-            });
-
-            label.on('mouseleave', () => {
-                labelBorder.visible(false);
-                contentLayer.batchDraw();
-            });
-
-            label.on('dblclick dbltap', () => {
-                label.hide();
-                contentLayer.draw();
-
-                const textPosition = label.absolutePosition();
-                const stageContainer = stage.container();
-                const areaPosition = {
-                    x: stageContainer.offsetLeft + textPosition.x,
-                    y: stageContainer.offsetTop - 6 + textPosition.y,
-                };
-
-                const textarea = document.createElement('textarea');
-                document.body.appendChild(textarea);
-
-                textarea.value = label.text();
-                textarea.style.position = 'absolute';
-                textarea.style.top = `${areaPosition.y}px`;
-                textarea.style.left = `${areaPosition.x}px`;
-                textarea.style.width = `${label.width() - label.padding() * 2 + 100}px`;
-                textarea.style.height = `${label.height() - label.padding() * 2 + 10}px`;
-                textarea.style.fontSize = `${label.fontSize()}px`;
-                textarea.style.fontFamily = label.fontFamily();
-                textarea.style.color = label.fill();
-                textarea.style.border = 'none';
-                textarea.style.background = 'none';
-                textarea.style.outline = 'none';
-                textarea.style.overflow = 'hidden';
-                textarea.style.padding = '0px';
-                textarea.style.margin = '0px';
-                textarea.style.resize = 'none';
-                textarea.style.zIndex = '1000';
-                textarea.focus();
-                textarea.select();
-
-                let isTextareaRemoved = false;
-
-                function removeTextarea() {
-                    if (isTextareaRemoved) return;
-                    isTextareaRemoved = true;
-                    document.body.removeChild(textarea);
-
-                    const newText = textarea.value.trim();
-                    if (newText === '') {
-                        labelGroup.destroy();
-                        lineLabelMap.delete(group);
-                    } else {
-                        label.text(newText);
-                        label.show();
-                    }
-                    contentLayer.draw();
-                }
-
-                textarea.addEventListener('blur', removeTextarea);
-
-                textarea.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        removeTextarea();
-                    }
-                });
-            });
-        }
-    });
-
-    contentLayer.draw();
-}
-
 
 function restoreEditableLine(lineGroup) {
-    console.log('LINE', lineGroup);
-    const children = lineGroup.getChildren();
-    // const line = lineGroup.findOne('Line');
-    // const startAnchor = lineGroup.findOne('Circle');
-    // const endAnchor = lineGroup.findOne('Circle:last-child');
-    // const boundingBox = lineGroup.findOne('Line:last-child');
-
-    const line = lineGroup.findOne((node) => node.getClassName() === 'Line' && !node.attrs.stroke.includes('rgba'));
-    const boundingBox = lineGroup.findOne((node) => node.getClassName() === 'Line' && node.attrs.stroke.includes('rgba'));
-    const startAnchor = lineGroup.findOne((node) => node.getClassName() === 'Circle' && node.index === 0);
-    const endAnchor = lineGroup.findOne((node) => node.getClassName() === 'Circle' && node.index === lineGroup.getChildren().length - 1);
+    const line = lineGroup.findOne('.mainLine');
+    const startAnchor = lineGroup.findOne('.startAnchor');
+    const endAnchor = lineGroup.findOne('.endAnchor');
+    const boundingBox = lineGroup.findOne('.boundingBox');
 
     let labelGroup = lineLabelMap.get(lineGroup);
 
@@ -1220,20 +997,29 @@ function restoreEditableLine(lineGroup) {
         }
     });
 
-    line.on('click', () => {
-        if (selectedLineGroup) {
-            const prevStartAnchor = selectedLineGroup.findOne('Circle');
-            const prevEndAnchor = selectedLineGroup.findOne('Circle:last-child');
+    line.on('click', (e) => {
+        e.cancelBubble = true;
+        if (currentMode === 'addLineLabel') {
+            addLabelToLine(line);
+            return;
+        } else if (currentMode === 'select') {
+            if (selectedLineGroup) {
+                const prevLine = selectedLineGroup.findOne('Line');
+                const prevStartAnchor = selectedLineGroup.findOne('Circle');
+                const prevEndAnchor = selectedLineGroup.findOne('Circle:last-child');
 
-            if (prevStartAnchor) prevStartAnchor.visible(false);
-            if (prevEndAnchor) prevEndAnchor.visible(false);
+                // if (prevLine) prevLine.stroke('black');
+                if (prevStartAnchor) prevStartAnchor.visible(false);
+                if (prevEndAnchor) prevEndAnchor.visible(false);
+            }
+            selectedLineGroup = lineGroup;
+            lineGroup.moveToTop();
+            boundingBox.visible(true);
+            startAnchor.visible(true);
+            endAnchor.visible(true);
+            contentLayer.draw();
+            stage.setAttr('clickedOnLine', true);
         }
-        selectedLineGroup = lineGroup;
-        lineGroup.moveToTop();
-        boundingBox.visible(true);
-        startAnchor.visible(true);
-        endAnchor.visible(true);
-        contentLayer.draw();
     });
 
     startAnchor.on('dragmove', function () {
@@ -1251,10 +1037,21 @@ function restoreEditableLine(lineGroup) {
         lineGroup.position(snappedPos);
         updateLine();
     });
+
+    stage.on('click', (e) => {
+        if (e.target !== line && e.target !== startAnchor && e.target !== endAnchor) {
+            boundingBox.visible(false);
+            startAnchor.visible(false);
+            endAnchor.visible(false);
+            selectedLineGroup = null;
+            contentLayer.draw();
+        }
+    });
 }
 
 function restoreLabel(lineGroup) {
-    const labelGroup = lineLabelMap.get(lineGroup);
+    const labelIdForLine = lineLabelMap.get(lineGroup.id());
+    labelGroup = contentLayer.findOne(`#${labelIdForLine}`);
     console.log('LABEL', labelGroup);
     if (!labelGroup) {
         console.log('Невозможно восстановить подпись.');
@@ -1290,19 +1087,76 @@ function restoreLabel(lineGroup) {
     });
 
     label.on('dblclick dbltap', () => {
-        // Вставьте обработчик редактирования текста
+        label.hide();
+        contentLayer.draw();
+
+        const textPosition = label.absolutePosition();
+        const stageContainer = stage.container();
+        const areaPosition = {
+            x: stageContainer.offsetLeft + textPosition.x,
+            y: stageContainer.offsetTop - 6 + textPosition.y,
+        };
+
+        const textarea = document.createElement('textarea');
+        document.body.appendChild(textarea);
+
+        textarea.value = label.text();
+        textarea.style.position = 'absolute';
+        textarea.style.top = `${areaPosition.y}px`;
+        textarea.style.left = `${areaPosition.x}px`;
+        textarea.style.width = `${label.width() - label.padding() * 2 + 100}px`;
+        textarea.style.height = `${label.height() - label.padding() * 2 + 10}px`;
+        textarea.style.fontSize = `${label.fontSize()}px`;
+        textarea.style.fontFamily = label.fontFamily();
+        textarea.style.color = label.fill();
+        textarea.style.border = 'none';
+        textarea.style.background = 'none';
+        textarea.style.outline = 'none';
+        textarea.style.overflow = 'hidden';
+        textarea.style.padding = '0px';
+        textarea.style.margin = '0px';
+        textarea.style.resize = 'none';
+        textarea.style.zIndex = '1000';
+        textarea.focus();
+        textarea.select();
+
+        let isTextareaRemoved = false;
+
+        function removeTextarea() {
+            if (isTextareaRemoved) return;
+            isTextareaRemoved = true;
+            document.body.removeChild(textarea);
+
+            const newText = textarea.value.trim();
+            if (newText === '') {
+                labelGroup.destroy();
+                lineLabelMap.delete(group);
+            } else {
+                label.text(newText);
+                label.show();
+            }
+            contentLayer.draw();
+        }
+
+        textarea.addEventListener('blur', removeTextarea);
+
+        textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                removeTextarea();
+            }
+        });
     });
 }
 // let q = 0;
 // console.log('stage.find', contentLayer.getChildren());
 // const filteredObjects = contentLayer.getChildren().filter(item => item.nodeType === 'Group');
 // console.log('filteredObjects', filteredObjects);
-// contentLayer.find('Group').forEach((group) => {
-//     console.log('group', group);
-//     // q += 1;
-//     // console.log('q=', q);
-//     // restoreEditableLine(group);
-//     // restoreLabel(group);
-// });
+contentLayer.find('Group').forEach((group) => {
+    // console.log('group', group);
+    // q += 1;
+    // console.log('q=', q);
+    restoreEditableLine(group);
+    restoreLabel(group);
+});
 
-restoreSceneFunctionality();
+// restoreSceneFunctionality();
