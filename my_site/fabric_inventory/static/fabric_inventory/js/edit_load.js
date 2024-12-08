@@ -60,18 +60,6 @@ function loadScene() {
     // Восстанавливаем карту lineLabelMap
     lineLabelMap = new Map();
 
-    // savedScene.lineLabelMap.forEach(({ lineId, labelId }) => {
-    //     console.log('lineId', lineId);
-    //     console.log('labelId', labelId);
-    //     const lineNode = contentLayer.findOne(`#${lineId}`);
-    //     const labelNode = contentLayer.findOne(`#${labelId}`);
-
-    //     if (lineNode && labelNode) {
-    //         lineLabelMap.set(lineNode, labelNode);
-    //     } else {
-    //         console.warn('Не удалось найти объекты для восстановления связи:', lineId, labelId);
-    //     }
-    // });
     savedScene.lineLabelMap.forEach(({ lineId, labelId }) => {
         lineLabelMap.set(lineId, labelId);
     });

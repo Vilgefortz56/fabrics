@@ -237,8 +237,6 @@ function addEditableLine(startX, startY, endX, endY) {
             endAnchor.visible(true);
             contentLayer.draw();
             stage.setAttr('clickedOnLine', true);
-            console.log('Выбрана линия', selectedLineGroup);
-            console.log('Выбрана линия', stage.getAttr('clickedOnLine'));
         }
     });
 
@@ -298,15 +296,6 @@ function addLabelToLine(line) {
     const midpointX = (linePoints[0] + linePoints[2]) / 2;
     const midpointY = (linePoints[1] + linePoints[3]) / 2;
 
-    // Создаем группу для подписи
-    // const labelGroup = new Konva.Group({
-    //     x: midpointX,
-    //     y: midpointY,
-    //     draggable: true,
-    //     name: 'labelGroup',
-    // });
-
-    // Текстовая подпись
     const label = new Konva.Text({
         text: 'Подпись',
         x: 0,
@@ -424,7 +413,7 @@ function addLabelToLine(line) {
             if (newText === '') {
                 // Если текст пустой, удаляем подпись и отвязываем её от линии
                 labelGroup.destroy();
-                lineLabelMap.delete(line);
+                lineLabelMap.delete(line.getParent().id());
                 clearSelection();
             } else {
                 // Если текст не пустой, сохраняем изменения

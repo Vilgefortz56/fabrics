@@ -76,14 +76,16 @@ function snapToGrid(value, gridSize) {
 let selectedLineGroup = null;
 let selectedLabelGroup = null;
 function addEditableLine(startX, startY, endX, endY) {
-    console.log('Creating line from', startX, startY, 'to', endX, endY);
+    
 
-    const lineGroup = new Konva.Group({ draggable: true, name: 'selectable' });
+    const lineId = `line-${Date.now()}-${Math.random()}`;
+    const lineGroup = new Konva.Group({ draggable: true, name: 'selectable', id: lineId });
 
     const line = new Konva.Line({
         points: [startX, startY, endX, endY],
         stroke: 'black',
         strokeWidth: 6,
+        name: 'mainLine',
     });
     lineGroup.add(line);
 
@@ -94,6 +96,7 @@ function addEditableLine(startX, startY, endX, endY) {
         lineCap: 'round',
         lineJoin: 'round',
         visible: false,
+        name: 'boundingBox',
     });
     lineGroup.add(boundingBox);
     boundingBox.moveToBottom();
@@ -105,6 +108,7 @@ function addEditableLine(startX, startY, endX, endY) {
         fill: 'red',
         draggable: true,
         visible: false,
+        name: 'startAnchor',
     });
 
     const endAnchor = new Konva.Circle({
@@ -114,6 +118,7 @@ function addEditableLine(startX, startY, endX, endY) {
         fill: 'red',
         draggable: true,
         visible: false,
+        name: 'endAnchor',
     });
 
     lineGroup.add(startAnchor);
@@ -141,6 +146,7 @@ function addEditableLine(startX, startY, endX, endY) {
         }
 
         contentLayer.draw();
+        console.log('updateLine', line.points());
     }
 
     function snapToGridPosition(pos) {
@@ -187,16 +193,6 @@ function addEditableLine(startX, startY, endX, endY) {
         }
     });
 
-    stage.on('click', (e) => {
-        if (e.target !== line && e.target !== startAnchor && e.target !== endAnchor) {
-            boundingBox.visible(false);
-            startAnchor.visible(false);
-            endAnchor.visible(false);
-            selectedLineGroup = null;
-            contentLayer.draw();
-        }
-    });
-
     startAnchor.on('dragmove', function () {
         this.position(snapToGridPosition(this.position()));
         updateLine();
@@ -234,25 +230,24 @@ let isAddingLabels = false;
 // let lineLabelMap = new Map();
 
 function addLabelToLine(line) {
+    console.log('lineLabelMap', lineLabelMap);
     if (lineLabelMap.has(line.getParent().id())) {
         alert('У этой линии уже есть подпись.');
         return;
     }
 
+    const labelId = `label-${Date.now()}-${Math.random()}`;
+    const labelGroup = new Konva.Group({
+        draggable: true,
+        name: 'labelGroup',
+        id: labelId,
+    });
     const lineGroup = line.getParent();
     console.log('lineGroup', lineGroup);
     const linePoints = getLineCoordinates(line);
     console.log('linePoints', linePoints);
     const midpointX = (linePoints[0] + linePoints[2]) / 2;
     const midpointY = (linePoints[1] + linePoints[3]) / 2;
-
-    // Создаем группу для подписи
-    const labelGroup = new Konva.Group({
-        x: midpointX,
-        y: midpointY,
-        draggable: true,
-        name: 'labelGroup',
-    });
 
     // Текстовая подпись
     const label = new Konva.Text({
@@ -355,7 +350,7 @@ function addLabelToLine(line) {
             if (newText === '') {
                 // Если текст пустой, удаляем подпись и отвязываем её от линии
                 labelGroup.destroy();
-                lineLabelMap.delete(line);
+                lineLabelMap.delete(line.getParent().id());
                 clearSelection();
             } else {
                 // Если текст не пустой, сохраняем изменения
@@ -385,19 +380,25 @@ function addLabelToLine(line) {
 
 
 // Обработчик клика по линии для добавления подписи
-stage.on('click', (e) => {
-    console.log('stage click', isAddingLabels);
-
-    if (currentMode !== 'addLineLabel') return;
-    const clickedNode = e.target;
-    console.log('clickedNode', clickedNode);
-    if (clickedNode instanceof Konva.Line) {
-        addLabelToLine(clickedNode);
-    } else {
-        alert('Кликните на линию для добавления подписи.');
-    }
-});
-
+// stage.on('click', (e) => {
+//     const clickedOutsideSelection = e.target === stage || e.target === contentLayer;
+//     const clickedNode = e.target;
+//     // console.log('clickedOutsideSelection', clickedOutsideSelection);
+//     // console.log(stage.getAttr('clickedOnLine'));
+//     // console.log('clickedNode', clickedNode);
+//     if (clickedOutsideSelection) {
+//         if (stage.getAttr('clickedOnLine') && selectedLineGroup) {
+//             stage.setAttr('clickedOnLine', false);
+//             selectedLineGroup.findOne('.boundingBox').visible(false);
+//             selectedLineGroup.findOne('.startAnchor').visible(false);
+//             selectedLineGroup.findOne('.endAnchor').visible(false);
+//             selectedLineGroup = null;
+//             contentLayer.draw();
+//         }   
+//         clearSelection();
+//         return;
+//     }
+// });
 
 // Переменные для рисования полилинии
 let isDrawingPolyline = false;
@@ -705,29 +706,48 @@ function deleteSelectedElements() {
 // Обработчик события нажатия клавиши Delete
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Delete') {
+        console.log('SEL LINE', selectedLineGroup);
+        console.log('Sel Group', selectedLabelGroup);
         if (currentMode === 'select') {
             if (selectedLabelGroup) {
-                const lineForLabel = Array.from(lineLabelMap.entries()).find(
-                    ([line, labelGroup]) => labelGroup.id() === selectedLabelGroup.id()
+                // Находим ID линии, связанной с выбранной подписью
+                const lineIdForLabel = Array.from(lineLabelMap.entries()).find(
+                    ([lineId, labelId]) => labelId === selectedLabelGroup.id()
                 )?.[0];
-                if (!lineForLabel) {
-                    console.log('Пиздец');
+
+                if (!lineIdForLabel) {
+                    console.log('Не удалось найти линию для подписи');
                     return;
                 }
-                lineLabelMap.delete(lineForLabel);
+
+                // Удаляем связь из lineLabelMap
+                lineLabelMap.delete(lineIdForLabel);
+
+                // Удаляем выбранную подпись
                 selectedLabelGroup.destroy();
                 clearSelection();
                 contentLayer.draw();
             } else if (selectedLineGroup) {
-                const labelGroupForLine = lineLabelMap.get(selectedLineGroup.id());
-                selectedLineGroup.destroy();  
-                labelGroupForLine.destroy();
+                // Находим ID подписи, связанной с выбранной линией
+                const labelIdForLine = lineLabelMap.get(selectedLineGroup.id());
+                console.log('Label ID FOR LINE', labelIdForLine);
+
+                if (labelIdForLine) {
+                    // Удаляем подпись
+                    const labelGroupForLine = contentLayer.findOne(`#${labelIdForLine}`);
+                    labelGroupForLine.destroy();
+                    console.log('Удалил подпись.')
+                }
+
+                // Удаляем линию и связь из lineLabelMap
                 lineLabelMap.delete(selectedLineGroup.id());
-                selectedLineGroup = null;  
+                selectedLineGroup.destroy();
+                selectedLineGroup = null;
+
                 clearSelection();
                 contentLayer.draw();
             } else {
-                deleteSelectedElements(); 
+                deleteSelectedElements(); // Удаляем другие элементы
             }
         }
     } else if (e.key === 'Escape') {
@@ -758,8 +778,8 @@ stage.on('click', (e) => {
     const clickedOutsideSelection = e.target === stage || e.target === contentLayer;
     const clickedNode = e.target;
     console.log('clickedOutsideSelection', clickedOutsideSelection);
-    console.log(stage.getAttr('clickedOnLine'));
     console.log('clickedNode', clickedNode);
+    console.log('selectedLineGroup',stage.getAttr('clickedOnLine'), selectedLineGroup);
     if (clickedOutsideSelection) {
         if (stage.getAttr('clickedOnLine') && selectedLineGroup) {
             stage.setAttr('clickedOnLine', false);
@@ -824,12 +844,64 @@ function orderVertices(linesWithLabels) {
     return vertices;
 }
 
+function sortLines(lines) {
+    const sortedLines = [];
+    const remainingLines = [...lines];
+
+    // Начнем с любой линии
+    sortedLines.push(remainingLines.pop());
+
+    while (remainingLines.length > 0) {
+        const lastLine = sortedLines[sortedLines.length - 1];
+        const lastPoint = lastLine.point2;
+
+        // Найти линию, которая начинается или заканчивается в точке lastPoint
+        const nextIndex = remainingLines.findIndex(line =>
+            (line.point1.x === lastPoint.x && line.point1.y === lastPoint.y) ||
+            (line.point2.x === lastPoint.x && line.point2.y === lastPoint.y)
+        );
+
+        if (nextIndex === -1) {
+            throw new Error("Не удалось соединить все линии. Проверьте данные.");
+        }
+
+        const nextLine = remainingLines.splice(nextIndex, 1)[0];
+
+        // Убедимся, что направление совпадает (соединяем точки)
+        if (nextLine.point1.x === lastPoint.x && nextLine.point1.y === lastPoint.y) {
+            sortedLines.push(nextLine);
+        } else {
+            // Меняем точки местами для корректного направления
+            sortedLines.push({
+                ...nextLine,
+                point1: nextLine.point2,
+                point2: nextLine.point1,
+            });
+        }
+    }
+
+    return sortedLines;
+}
+
+function normalizeLines(lines) {
+    return lines.map(line => {
+        const { point1, point2 } = line;
+        if (point1.x > point2.x || (point1.x === point2.x && point1.y > point2.y)) {
+            
+            return { ...line, point1: point2, point2: point1 };
+        }
+        return line;
+    });
+}
+
 function getLinesWithLabels() {
-    const linesWithLabels = [];
+    let linesWithLabels = [];
     console.log(lineLabelMap);
+    let lineIndex = 0;
     // Перебираем все группы линий
     contentLayer.find('Group').forEach(group => {
-        const line = group.findOne('Line'); // Находим линию в группе
+        lineIndex++;
+        const line = group.findOne('.mainLine'); // Находим линию в группе
         const lineId = group.id(); // ID текущей группы линии
 
         // Ищем подпись в lineLabelMap
@@ -840,29 +912,36 @@ function getLinesWithLabels() {
             const points = line.points(); // Координаты линии
             const labelText = labelGroup.findOne('Text'); // Находим текст подписи внутри группы
             linesWithLabels.push({
-                index: group.getAttr('index') || 0, // Индекс группы
+                // index: group.getAttr('index') || 0, // Индекс группы
                 point1: { x: points[0], y: points[1] }, // Начальная точка
                 point2: { x: points[2], y: points[3] }, // Конечная точка
-                label_obj: labelText, // Объект текста подписи
+                label_obj: parseFloat(labelText.text()), // Объект текста подписи
             });
         }
     });
-
+    console.log('LINE Index', lineIndex);
+    
     // Сортируем массив по индексу линий
-    linesWithLabels.sort((a, b) => a.index - b.index);
-
+    linesWithLabels = normalizeLines(linesWithLabels);
+    console.log('LINE Index', linesWithLabels);
     return linesWithLabels;
 }
 
 function calculateAreaFromScene() {
     const linesWithLabels = getLinesWithLabels();
+    const sortedLines = sortLines(linesWithLabels);
+    console.log('sortedLines', sortedLines);
 
     if (linesWithLabels.length > 0) {
         // Извлекаем реальные длины сторон из подписей
-        const realSideLengths = linesWithLabels.map(line => parseFloat(line.label_obj.text()));
-        const vertices = orderVertices(linesWithLabels);
+        // const realSideLengths = linesWithLabels.map(line => parseFloat(line.label_obj.text()));
+        const realSideLengths = linesWithLabels.map(line => line.label_obj);
+        // const vertices = orderVertices(linesWithLabels);
+        vertices = linesWithLabels.map(line => line.point1);
+        console.log('vertices', vertices);
+        console.log('realSideLengths', realSideLengths);
         // Извлекаем начальные точки линий (вершины)
-        // vertices = linesWithLabels.map(line => line.point1);
+        
 
         // Вычисляем площадь
         const area = calculatePolygonAreaWithRealDimensions(vertices, realSideLengths).toFixed(2);
@@ -955,7 +1034,7 @@ function restoreEditableLine(lineGroup) {
     const endAnchor = lineGroup.findOne('.endAnchor');
     const boundingBox = lineGroup.findOne('.boundingBox');
 
-    let labelGroup = lineLabelMap.get(lineGroup);
+    let labelGroup = lineLabelMap.get(lineGroup.id());
 
     if (!line || !startAnchor || !endAnchor || !boundingBox) {
         console.log('Невозможно восстановить линию.');
@@ -972,15 +1051,15 @@ function restoreEditableLine(lineGroup) {
         line.points(points);
         boundingBox.points(points);
 
-        if (labelGroup) {
-            const midpointX = (points[0] + points[2]) / 2;
-            const midpointY = (points[1] + points[3]) / 2;
+        // if (labelGroup) {
+        //     const midpointX = (points[0] + points[2]) / 2;
+        //     const midpointY = (points[1] + points[3]) / 2;
 
-            labelGroup.position({
-                x: midpointX,
-                y: midpointY,
-            });
-        }
+        //     labelGroup.position({
+        //         x: midpointX,
+        //         y: midpointY,
+        //     });
+        // }
 
         contentLayer.draw();
     }
@@ -1003,15 +1082,19 @@ function restoreEditableLine(lineGroup) {
             addLabelToLine(line);
             return;
         } else if (currentMode === 'select') {
-            if (selectedLineGroup) {
-                const prevLine = selectedLineGroup.findOne('Line');
-                const prevStartAnchor = selectedLineGroup.findOne('Circle');
-                const prevEndAnchor = selectedLineGroup.findOne('Circle:last-child');
+            // if (stage.getAttr('clickedOnLine')) {
+            //     return;
+            // }
+            // if (selectedLineGroup) {
+            //     const prevLine = selectedLineGroup.findOne('Line');
+            //     const prevStartAnchor = selectedLineGroup.findOne('Circle');
+            //     const prevEndAnchor = selectedLineGroup.findOne('Circle:last-child');
 
-                // if (prevLine) prevLine.stroke('black');
-                if (prevStartAnchor) prevStartAnchor.visible(false);
-                if (prevEndAnchor) prevEndAnchor.visible(false);
-            }
+            //     // if (prevLine) prevLine.stroke('black');
+            //     if (prevStartAnchor) prevStartAnchor.visible(false);
+            //     if (prevEndAnchor) prevEndAnchor.visible(false);
+            // }
+
             selectedLineGroup = lineGroup;
             lineGroup.moveToTop();
             boundingBox.visible(true);
@@ -1062,7 +1145,8 @@ function restoreLabel(lineGroup) {
     const labelBorder = labelGroup.findOne('Rect');
 
     label.on('click', () => {
-        selectedLabelGroup = labelGroup;
+        selectedLabelGroup = label.getParent();
+        console.log('LABEL GROUP', selectedLabelGroup);
         contentLayer.draw();
     });
 
@@ -1147,16 +1231,10 @@ function restoreLabel(lineGroup) {
         });
     });
 }
-// let q = 0;
-// console.log('stage.find', contentLayer.getChildren());
-// const filteredObjects = contentLayer.getChildren().filter(item => item.nodeType === 'Group');
-// console.log('filteredObjects', filteredObjects);
+
 contentLayer.find('Group').forEach((group) => {
-    // console.log('group', group);
-    // q += 1;
-    // console.log('q=', q);
     restoreEditableLine(group);
     restoreLabel(group);
 });
 
-// restoreSceneFunctionality();
+
