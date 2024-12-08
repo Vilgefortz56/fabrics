@@ -40,7 +40,10 @@ class FabricViewAdmin(admin.ModelAdmin):
     list_display = ('name', )
 
 class FabricAdmin(admin.ModelAdmin):
-    list_display = ('title', 'area', 'user', 'status',) #'area', 'user', 'status'
+    readonly_fields = ('title', 'image', 'canvas_data', 'date_added', 'date_updated')
+    list_display = ('user', 'status', 'area', 'date_added', 'date_updated') #'area', 'user', 'status'
+    def has_add_permission(self, request):
+        return False
 
 
 admin.site.register(FabricView, FabricViewAdmin)
