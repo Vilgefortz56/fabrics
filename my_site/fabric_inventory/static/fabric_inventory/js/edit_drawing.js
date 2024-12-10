@@ -174,6 +174,7 @@ function addEditableLine(startX, startY, endX, endY) {
             addLabelToLine(line);
             return;
         } else if (currentMode === 'select') {
+            console.log('selectedLineGroup', selectedLineGroup);
             if (selectedLineGroup) {
                 const prevLine = selectedLineGroup.findOne('Line');
                 const prevStartAnchor = selectedLineGroup.findOne('Circle');
@@ -919,10 +920,11 @@ function getLinesWithLabels() {
             });
         }
     });
-    console.log('LINE Index', lineIndex);
+    console.log('LINE Index', linesWithLabels);
     
     // Сортируем массив по индексу линий
     linesWithLabels = normalizeLines(linesWithLabels);
+    linesWithLabels = reorderLinesAndAddLengths(linesWithLabels);
     console.log('LINE Index', linesWithLabels);
     return linesWithLabels;
 }
@@ -954,6 +956,58 @@ function calculateAreaFromScene() {
 
     console.log('Фигура не замкнута или не содержит линий с подписями.');
     return 0;
+}
+
+function reorderLinesAndAddLengths(lines) {
+    // Шаг 1: Собрать уникальные точки
+    const pointsSet = new Set();
+    lines.forEach(line => {
+        pointsSet.add(`${line.point1.x},${line.point1.y}`);
+        pointsSet.add(`${line.point2.x},${line.point2.y}`);
+    });
+
+    // Преобразовать в массив объектов точек
+    const points = Array.from(pointsSet).map(str => {
+        const [x, y] = str.split(',').map(Number);
+        return { x, y };
+    });
+
+    // Шаг 2: Вычислить центр фигуры
+    const center = points.reduce(
+        (acc, point) => ({
+            x: acc.x + point.x / points.length,
+            y: acc.y + point.y / points.length
+        }),
+        { x: 0, y: 0 }
+    );
+
+    // Функция для вычисления угла точки относительно центра
+    const getAngle = (point) => Math.atan2(point.y - center.y, point.x - center.x);
+
+    // Шаг 3: Упорядочить точки в линиях
+    points.sort((a, b) => {
+        const angleA = getAngle(a);
+        const angleB = getAngle(b);
+        return angleA - angleB;
+    });
+
+    // Шаг 4: Создать новый массив линий в упорядоченном порядке
+    const reorderedLines = [];
+    for (let i = 0; i < points.length; i++) {
+        const point1 = points[i];
+        const point2 = points[(i + 1) % points.length]; // Следующая точка, замыкаем на первую
+        const originalLine = lines.find(line =>
+            (line.point1.x === point1.x && line.point1.y === point1.y && line.point2.x === point2.x && line.point2.y === point2.y) ||
+            (line.point2.x === point1.x && line.point2.y === point1.y && line.point1.x === point2.x && line.point1.y === point2.y)
+        );
+
+        reorderedLines.push({
+            point1,
+            point2,
+            label_obj: originalLine?.label_obj || 0 // Если линия найдена, берём длину, иначе 0
+        });
+    }
+    return reorderedLines;
 }
 
 // Переработанная функция вычисления площади
@@ -1082,17 +1136,22 @@ function restoreEditableLine(lineGroup) {
             addLabelToLine(line);
             return;
         } else if (currentMode === 'select') {
+            
             // if (stage.getAttr('clickedOnLine')) {
             //     return;
             // }
             // if (selectedLineGroup) {
-            //     const prevLine = selectedLineGroup.findOne('Line');
-            //     const prevStartAnchor = selectedLineGroup.findOne('Circle');
-            //     const prevEndAnchor = selectedLineGroup.findOne('Circle:last-child');
+            // if (stage.getAttr('clickedOnLine')) {
+            //     console.log('LineGroup', lineGroup);
+            //     const prevLine = lineGroup.findOne('Line');
+            //     const prevStartAnchor = lineGroup.findOne('.startAnchor');
+            //     const prevEndAnchor = lineGroup.findOne('.endAnchor');
 
             //     // if (prevLine) prevLine.stroke('black');
             //     if (prevStartAnchor) prevStartAnchor.visible(false);
             //     if (prevEndAnchor) prevEndAnchor.visible(false);
+            //     contentLayer.draw();
+            //     return;
             // }
 
             selectedLineGroup = lineGroup;
@@ -1126,6 +1185,7 @@ function restoreEditableLine(lineGroup) {
             boundingBox.visible(false);
             startAnchor.visible(false);
             endAnchor.visible(false);
+            // console.log('selectedLineGroup', selectedLineGroup);
             selectedLineGroup = null;
             contentLayer.draw();
         }
