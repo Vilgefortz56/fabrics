@@ -778,9 +778,9 @@ function clearSelection() {
 stage.on('click', (e) => {
     const clickedOutsideSelection = e.target === stage || e.target === contentLayer;
     const clickedNode = e.target;
-    console.log('clickedOutsideSelection', clickedOutsideSelection);
-    console.log('clickedNode', clickedNode);
-    console.log('selectedLineGroup',stage.getAttr('clickedOnLine'), selectedLineGroup);
+    // console.log('clickedOutsideSelection', clickedOutsideSelection);
+    // console.log('clickedNode', clickedNode);
+    console.log('clickedOnLine',stage.getAttr('clickedOnLine'), selectedLineGroup);
     if (clickedOutsideSelection) {
         if (stage.getAttr('clickedOnLine') && selectedLineGroup) {
             stage.setAttr('clickedOnLine', false);
@@ -788,6 +788,7 @@ stage.on('click', (e) => {
             selectedLineGroup.findOne('.startAnchor').visible(false);
             selectedLineGroup.findOne('.endAnchor').visible(false);
             selectedLineGroup = null;
+            console.log('sel_after',stage.getAttr('clickedOnLine'), selectedLineGroup);
             contentLayer.draw();
         }   
         clearSelection();
@@ -845,44 +846,6 @@ function orderVertices(linesWithLabels) {
     return vertices;
 }
 
-function sortLines(lines) {
-    const sortedLines = [];
-    const remainingLines = [...lines];
-
-    // Начнем с любой линии
-    sortedLines.push(remainingLines.pop());
-
-    while (remainingLines.length > 0) {
-        const lastLine = sortedLines[sortedLines.length - 1];
-        const lastPoint = lastLine.point2;
-
-        // Найти линию, которая начинается или заканчивается в точке lastPoint
-        const nextIndex = remainingLines.findIndex(line =>
-            (line.point1.x === lastPoint.x && line.point1.y === lastPoint.y) ||
-            (line.point2.x === lastPoint.x && line.point2.y === lastPoint.y)
-        );
-
-        if (nextIndex === -1) {
-            throw new Error("Не удалось соединить все линии. Проверьте данные.");
-        }
-
-        const nextLine = remainingLines.splice(nextIndex, 1)[0];
-
-        // Убедимся, что направление совпадает (соединяем точки)
-        if (nextLine.point1.x === lastPoint.x && nextLine.point1.y === lastPoint.y) {
-            sortedLines.push(nextLine);
-        } else {
-            // Меняем точки местами для корректного направления
-            sortedLines.push({
-                ...nextLine,
-                point1: nextLine.point2,
-                point2: nextLine.point1,
-            });
-        }
-    }
-
-    return sortedLines;
-}
 
 function normalizeLines(lines) {
     return lines.map(line => {
@@ -898,10 +861,8 @@ function normalizeLines(lines) {
 function getLinesWithLabels() {
     let linesWithLabels = [];
     console.log(lineLabelMap);
-    let lineIndex = 0;
     // Перебираем все группы линий
     contentLayer.find('Group').forEach(group => {
-        lineIndex++;
         const line = group.findOne('.mainLine'); // Находим линию в группе
         const lineId = group.id(); // ID текущей группы линии
 
@@ -913,10 +874,9 @@ function getLinesWithLabels() {
             const points = line.points(); // Координаты линии
             const labelText = labelGroup.findOne('Text'); // Находим текст подписи внутри группы
             linesWithLabels.push({
-                // index: group.getAttr('index') || 0, // Индекс группы
                 point1: { x: points[0], y: points[1] }, // Начальная точка
                 point2: { x: points[2], y: points[3] }, // Конечная точка
-                label_obj: parseFloat(labelText.text()), // Объект текста подписи
+                label_obj: parseFloat(labelText.text().replace(',', '.')), // Объект текста подписи
             });
         }
     });
@@ -931,8 +891,6 @@ function getLinesWithLabels() {
 
 function calculateAreaFromScene() {
     const linesWithLabels = getLinesWithLabels();
-    const sortedLines = sortLines(linesWithLabels);
-    console.log('sortedLines', sortedLines);
 
     if (linesWithLabels.length > 0) {
         // Извлекаем реальные длины сторон из подписей
@@ -946,7 +904,7 @@ function calculateAreaFromScene() {
         
 
         // Вычисляем площадь
-        const area = calculatePolygonAreaWithRealDimensions(vertices, realSideLengths).toFixed(2);
+        const area = (calculatePolygonAreaWithRealDimensions(vertices, realSideLengths)/1000000).toFixed(2);
         inputArea.value = area;
         console.log(area);
         current_area = area;
@@ -1088,7 +1046,7 @@ function restoreEditableLine(lineGroup) {
     const endAnchor = lineGroup.findOne('.endAnchor');
     const boundingBox = lineGroup.findOne('.boundingBox');
 
-    let labelGroup = lineLabelMap.get(lineGroup.id());
+    let labelGroup = contentLayer.findOne(`#${lineLabelMap.get(lineGroup.id())}`);
 
     if (!line || !startAnchor || !endAnchor || !boundingBox) {
         console.log('Невозможно восстановить линию.');
@@ -1105,15 +1063,15 @@ function restoreEditableLine(lineGroup) {
         line.points(points);
         boundingBox.points(points);
 
-        // if (labelGroup) {
-        //     const midpointX = (points[0] + points[2]) / 2;
-        //     const midpointY = (points[1] + points[3]) / 2;
-
-        //     labelGroup.position({
-        //         x: midpointX,
-        //         y: midpointY,
-        //     });
-        // }
+        if (labelGroup) {
+            const midpointX = (points[0] + points[2]) / 2;
+            const midpointY = (points[1] + points[3]) / 2;
+            console.log('Смена позиции');
+            labelGroup.position({
+                x: midpointX,
+                y: midpointY,
+            });
+        }
 
         contentLayer.draw();
     }
@@ -1153,8 +1111,9 @@ function restoreEditableLine(lineGroup) {
             //     contentLayer.draw();
             //     return;
             // }
-
+            console.log('click on line: before', selectedLineGroup);
             selectedLineGroup = lineGroup;
+            console.log('click on line: after', selectedLineGroup.id());
             lineGroup.moveToTop();
             boundingBox.visible(true);
             startAnchor.visible(true);
@@ -1185,7 +1144,7 @@ function restoreEditableLine(lineGroup) {
             boundingBox.visible(false);
             startAnchor.visible(false);
             endAnchor.visible(false);
-            // console.log('selectedLineGroup', selectedLineGroup);
+            console.log('Лол', selectedLineGroup);
             selectedLineGroup = null;
             contentLayer.draw();
         }

@@ -1015,7 +1015,7 @@ function calculateAreaFromScene() {
         // vertices = linesWithLabels.map(line => line.point1);
 
         // Вычисляем площадь
-        const area = calculatePolygonAreaWithRealDimensions(vertices, realSideLengths).toFixed(2);
+        const area = (calculatePolygonAreaWithRealDimensions(vertices, realSideLengths)/1000000).toFixed(2);
         inputArea.value = area;
         console.log(area);
         current_area = area;
