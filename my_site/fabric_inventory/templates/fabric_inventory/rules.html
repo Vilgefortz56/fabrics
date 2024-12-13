@@ -1,0 +1,71 @@
+{% load static %}
+<button class="floating-button" data-bs-toggle="modal" data-bs-target="#rulesModal">
+    <i class="bi bi-question-lg"></i>
+</button>
+
+<div class="modal fade" id="rulesModal" tabindex="-1" aria-labelledby="rulesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="rulesModalLabel">Описание доступного функционала</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="text-center">
+                <img src="{% static 'fabric_inventory/images/add_fabric.png' %}" alt="Rules" class="img-fluid">
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <h4 class="mb-3">Описание элементов</h4>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <strong>1.</strong><strong><em> Инструмент выделения.</em></strong> Вы можете использовать этот инструмент для выделения элементов на холсте.
+                            Выделенную группу элементов можно перемещать путём перетаскивания за один из элементов, а также отдельные элементы.
+                        </li>
+                        <li class="list-group-item">
+                            <strong>2.</strong><strong><em>Инструмент рисования линий.</em></strong> Когда этот инструмент выбран, можно на холсте ставить первую точку, а затем
+                            следующую и так далее. Чтобы закончить рисование фигуры нужно сделать клик на первую точку или сделать двойной клик. Линия закончится в последней
+                            установленной точке. Нажатие на клавишу <kbd>ESC</kbd> отменяет рисование линии.
+                        </li>
+                        <li class="list-group-item">
+                            <strong>3.</strong> <strong><em>Кнопка расчёта площади фигуры.</em></strong> При нажатии на эту кнопку<strong>(при условии что на каждую линию были
+                            поставлены подписи размера)</strong>, будет производиться реальный расчёт площади фигуры в метрах квадратных. Полученное значение будет записано в поле
+                            площадь. <strong><em>Если требуется, это хначение можно написать самостоятельно.</em></strong>
+                        </li>
+                        <li class="list-group-item">
+                            <strong>4.</strong></strong> <strong><em>Кнопка сохранения.</em></strong> При нажатии на эту кнопку вам предложит сохранить фигуру с заполненными
+                            данными.
+                        </li>
+                        <li class="list-group-item">
+                            <strong>5.</strong> </strong></strong> <strong><em>Инструмент добавления подписи.</em></strong> При нажатии на эту кнопку будет выбран инструмент добавления 
+                            подписи. При клике на линию, к ней добавится надпись. Надпись можно изменить, путём двойного нажатия на неё и набора текста. Её также можно передвигать или
+                            удалить, нажатие на клавишу <kbd>Delete</kbd>. К одной линии можно добавить только одну подпись.
+
+                        </li>
+                        <li class="list-group-item">
+                            <strong>6.</strong> Подробное описание элемента 1. Здесь можно разместить большой объем текста, включая объяснения, контекст или другие детали.
+                        </li>
+                        <li class="list-group-item">
+                            <strong>7.</strong> Подробное описание элемента 1. Здесь можно разместить большой объем текста, включая объяснения, контекст или другие детали.
+                        </li>
+                        <li class="list-group-item">
+                            <strong>8.</strong> Подробное описание элемента 1. Здесь можно разместить большой объем текста, включая объяснения, контекст или другие детали.
+                        </li>
+                        <li class="list-group-item">
+                            <strong>9.</strong> Подробное описание элемента 1. Здесь можно разместить большой объем текста, включая объяснения, контекст или другие детали.
+                        </li>
+                        <li class="list-group-item">
+                            <strong>10.</strong> Подробное описание элемента 1. Здесь можно разместить большой объем текста, включая объяснения, контекст или другие детали.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  

@@ -2,9 +2,28 @@ body {
     margin: 0;
     padding: 0;
 }
-canvas {
-    border: 1px solid #ccc;
-}
+.floating-button {
+    position: fixed; /* Фиксация в одном месте */
+    bottom: 20px;    /* Отступ снизу */
+    right: 20px;     /* Отступ справа */
+    z-index: 1050;   /* Поверх всех элементов */
+    width: 60px;     /* Ширина кнопки */
+    height: 60px;    /* Высота кнопки (равна ширине, чтобы сделать круг) */
+    border-radius: 50%; /* Скругление углов для круга */
+    background-color: #6c757d; /* Цвет кнопки (Bootstrap primary) */
+    color: #fff;      /* Белый цвет иконки */
+    border: none;     /* Убираем рамку */
+    display: flex;    /* Для выравнивания иконки */
+    align-items: center; /* Центровка по вертикали */
+    justify-content: center; /* Центровка по горизонтали */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Тень для эффекта */
+    cursor: pointer;  /* Указатель мыши */
+    transition: background-color 0.3s ease; /* Плавный эффект при наведении */
+  }
+
+  .floating-button:hover {
+    background-color: #5a6268; /* Более тёмный синий при наведении */
+  }
 #controls {
     margin: 10px;
 }

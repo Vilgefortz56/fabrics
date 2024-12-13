@@ -19,7 +19,6 @@ from .forms import CustomLoginForm, FabricFilterForm, FabricEditForm
 from .models import Fabric, FabricType, FabricView
 from django.views.decorators.csrf import csrf_exempt
 import base64
-from django.conf import settings
 
 
 @login_required
@@ -32,8 +31,6 @@ def add_fabric_page(request):
         fabric_type.id: list(fabric_type.views.values('id', 'name'))
         for fabric_type in fabric_types
     }
-    # print(type(fabric_data))
-    # print(json.dumps(fabric_data, indent=4))
     return render(request, 'fabric_inventory/fabric_canvas.html', {'fabric_types': fabric_types, 
                                                                    'fabric_views': fabric_views,
                                                                    'fabric_data': fabric_data})
@@ -61,10 +58,6 @@ def get_fabric_views(request, fabric_type_id):
             }
     return JsonResponse(data, safe=False)
 
-# def get_fabric_views_ajax(request):
-#     fabric_types = request.GET.getlist('fabric_types[]')
-#     views = FabricView.objects.filter(fabric_type__id__in=fabric_types).values('id', 'name')
-#     return JsonResponse({'views': list(views)})
 
 @csrf_exempt
 def get_fabric_views_ajax(request):
@@ -97,28 +90,15 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('fabric_inventory:home')
     
 
-    # def get_initial(self):
-    #     initial = super().get_initial()
-    #     # Убедитесь, что значение `area` подставляется корректно
-    #     initial['area'] = self.get_object().area
-    #     print(initial)
-    #     return initial
-
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        # Устанавливаем начальное значение для поля `area` из объекта модели
-        # form.fields['area'].initial = self.get_object().area
-        # print(form.fields['area'].initial)
         return form
 
     def form_valid(self, form):
         instance = form.instance
-        canvas_data = form.data['canvas_data'] #self.request.POST.get('canvas_data', None)
-        edit_image = form.data['edit_image'] #self.request.POST.get('edit_image', None)
+        canvas_data = form.data['canvas_data'] 
+        edit_image = form.data['edit_image'] 
         image_path = instance.image.path
-        # area = form.data['area']
-        # print("area", area)
-        # print("Edit image", edit_image)
         # Отделяем метаданные base64 и декодируем изображение
         frmt, imgstr = edit_image.split(';base64,')  
         img_data = ContentFile(base64.b64decode(imgstr))
@@ -136,18 +116,11 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
     # Переопределяем метод для получения объекта по pk
     def get_object(self):
         pk = self.kwargs.get('pk')  # Получаем pk из URL
-        # print(pk)
-        #print(get_object_or_404(Fabric, pk=pk).area)
-        obj = get_object_or_404(Fabric, pk=pk)
-        # print("Во вьюхе",type(obj.canvas_data))
         return get_object_or_404(Fabric, pk=pk)  # Возвращаем объект или 404
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['fabric'] = self.get_object()
-        # print(context['fabric'].area)
-        # print(type(context['fabric'].area))
-        # context['fabric'].canvas_data = json.loads(context['fabric'].canvas_data)
         return context
     
     
@@ -182,10 +155,10 @@ class FabricsHome(ListView):
     def get_paginate_by(self, queryset):
         # Получаем значение параметра per_page из запроса
         try:
-            per_page = self.request.GET.get('per_page', 5)  # Значение по умолчанию 6
+            per_page = self.request.GET.get('per_page', 20)  # Значение по умолчанию 6
             return int(per_page)  # Преобразуем в int
         except TypeError and ValueError:
-            per_page = 5
+            per_page = 20
             return int(per_page)
 
     def get_filter_form(self):
@@ -216,9 +189,6 @@ class FabricsHome(ListView):
             'views_by_type': views_by_type,
             'filter_params': filter_params.urlencode()
         })
-        # context['form'] = self.get_filter_form()
-        # context['title'] = 'Список тканей'
-        # context['per_page'] = per_page
         return context
 
 class LoginUser(LoginView):
@@ -261,11 +231,8 @@ def upload_fabric_image(request):
         fabrictype_id = int(body_data.get('fabrictype_id'))
         fabricview_id = body_data.get('fabricview_id')
         canvas_data = body_data.get('canvas_data')
-        print("При записе",(canvas_data))
-
         fabrictype_instance = FabricType.objects.get(pk=fabrictype_id)
         if fabricview_id is None:    
-            # fabricview_instance = FabricView.objects.get(pk=1)
             fabricview_instance = None
         else:
             fabricview_instance = FabricView.objects.get(pk=fabricview_id)

@@ -54,18 +54,12 @@ selectToolButton.addEventListener('click', function() {
     setActiveButton(this);
 });
 
-// drawLineButton.addEventListener('click', function() {
-//     currentMode = 'drawLine';
-//     isSelectMode = false;
-//     setActiveButton(this);
-// });
 
 drawPol.addEventListener('click', function() {
     currentMode = 'drawPolyLine';
     isSelectMode = false;
     setMode(currentMode);
     setActiveButton(this);
-    // startDrawingPolyline();
 });
 
 // Функция привязки к сетке
