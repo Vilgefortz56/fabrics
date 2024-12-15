@@ -1,10 +1,9 @@
 stage.getContainer().style.border = '1px solid black';
-// const gridLayer = new Konva.Layer();
-// const contentLayer = new Konva.Layer();
-// stage.add(gridLayer, contentLayer);
-console.log('contentLayer', contentLayer);
+console.log('gridLayer', gridLayer);
 let isSelectMode = false;
-let gridSize = parseInt(document.getElementById('gridSize').value) || 50;
+let isLineSelected = false;
+let gridSize = gridLayer.getAttr('gridSize') || 50;
+document.getElementById('gridSize').value = gridSize;
 
 function drawGrid(gridSize) {
     gridLayer.destroyChildren();
@@ -19,7 +18,6 @@ function drawGrid(gridSize) {
     }
     gridLayer.draw();
 }
-// drawGrid(gridSize);
 
 document.getElementById('gridSize').addEventListener('input', function() {
     gridSize = parseInt(this.value);
@@ -30,7 +28,6 @@ document.getElementById('gridSize').addEventListener('input', function() {
 let currentMode = 'select';
 let selectedObjects = [];
 const selectToolButton = document.getElementById('selectTool');
-// const drawLineButton = document.getElementById('addLine');
 const drawPol = document.getElementById('drawPolylineTool');
 const addLineLabelButton  = document.getElementById('addLineLabel');
 const saveDataButton = document.getElementById('saveData');
@@ -70,8 +67,6 @@ function snapToGrid(value, gridSize) {
 let selectedLineGroup = null;
 let selectedLabelGroup = null;
 function addEditableLine(startX, startY, endX, endY) {
-    
-
     const lineId = `line-${Date.now()}-${Math.random()}`;
     const lineGroup = new Konva.Group({ draggable: true, name: 'selectable', id: lineId });
 
@@ -771,10 +766,6 @@ function clearSelection() {
 // Обработчик для снятия выделения при клике за пределами объектов
 stage.on('click', (e) => {
     const clickedOutsideSelection = e.target === stage || e.target === contentLayer;
-    const clickedNode = e.target;
-    // console.log('clickedOutsideSelection', clickedOutsideSelection);
-    // console.log('clickedNode', clickedNode);
-    console.log('clickedOnLine',stage.getAttr('clickedOnLine'), selectedLineGroup);
     if (clickedOutsideSelection) {
         if (stage.getAttr('clickedOnLine') && selectedLineGroup) {
             stage.setAttr('clickedOnLine', false);
@@ -782,7 +773,6 @@ stage.on('click', (e) => {
             selectedLineGroup.findOne('.startAnchor').visible(false);
             selectedLineGroup.findOne('.endAnchor').visible(false);
             selectedLineGroup = null;
-            console.log('sel_after',stage.getAttr('clickedOnLine'), selectedLineGroup);
             contentLayer.draw();
         }   
         clearSelection();
@@ -817,28 +807,6 @@ contentLayer.on('dragmove', function () {
         contentLayer.batchDraw();
     }
 });
-
-function orderVertices(linesWithLabels) {
-    const vertices = [];
-    const visited = new Set();
-
-    let currentPoint = linesWithLabels[0].point1; // Начинаем с первой точки
-    while (vertices.length < linesWithLabels.length) {
-        vertices.push(currentPoint);
-        visited.add(JSON.stringify(currentPoint));
-
-        // Ищем следующую линию, которая начинается в currentPoint
-        const nextLine = linesWithLabels.find(line => 
-            !visited.has(JSON.stringify(line.point2)) && 
-            (line.point1.x === currentPoint.x && line.point1.y === currentPoint.y)
-        );
-
-        if (!nextLine) break; // Если следующая линия не найдена, фигура разорвана
-        currentPoint = nextLine.point2;
-    }
-
-    return vertices;
-}
 
 
 function normalizeLines(lines) {
@@ -879,7 +847,7 @@ function getLinesWithLabels() {
     // Сортируем массив по индексу линий
     linesWithLabels = normalizeLines(linesWithLabels);
     linesWithLabels = reorderLinesAndAddLengths(linesWithLabels);
-    console.log('LINE Index', linesWithLabels);
+
     return linesWithLabels;
 }
 
@@ -888,15 +856,8 @@ function calculateAreaFromScene() {
 
     if (linesWithLabels.length > 0) {
         // Извлекаем реальные длины сторон из подписей
-        // const realSideLengths = linesWithLabels.map(line => parseFloat(line.label_obj.text()));
         const realSideLengths = linesWithLabels.map(line => line.label_obj);
-        // const vertices = orderVertices(linesWithLabels);
         vertices = linesWithLabels.map(line => line.point1);
-        console.log('vertices', vertices);
-        console.log('realSideLengths', realSideLengths);
-        // Извлекаем начальные точки линий (вершины)
-        
-
         // Вычисляем площадь
         const area = (calculatePolygonAreaWithRealDimensions(vertices, realSideLengths)/1000000).toFixed(2);
         inputArea.value = area;
@@ -1008,27 +969,7 @@ function calculatePolygonAreaWithRealDimensions(vertices, realSideLengths) {
 }
 
 
-// const confirmActionButton = document.getElementById('confirmAction');
-// const confirmationModal = new bootstrap.Modal(document.getElementById('confirmModal'));
-// const warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
-// // Если пользователь подтверждает действие, выполняем отправку данных
-// confirmActionButton.addEventListener('click', function() {
-//     confirmationModal.hide(); // Закрываем модальное окно
-//     sendCroppedImageToServer(); // Ваша функция отправки данных
-// });
-
-
-// Обработчик кнопки сохранения данных
-// document.getElementById('saveData').addEventListener('click', function() {
-//     confirmationModal.show();
-// });
-// drawPol.addEventListener('click', () => setMode('drawPolyline'));
-// Привязываем запуск рисования полилинии к кнопке
 drawPol.addEventListener('click', startDrawingPolyline);
-// Привязка функции добавления линии к кнопке
-// drawPol.addEventListener('click', addEditablePolyline);
-// selectToolButton.addEventListener('click', () => setMode('select'));
-// saveDataButton.addEventListener('click', saveScene);
 setMode(currentMode);
 setActiveButton(selectToolButton);
 calculateAreaButton.addEventListener('click', calculateAreaFromScene);
@@ -1088,26 +1029,7 @@ function restoreEditableLine(lineGroup) {
             addLabelToLine(line);
             return;
         } else if (currentMode === 'select') {
-            
-            // if (stage.getAttr('clickedOnLine')) {
-            //     return;
-            // }
-            // if (selectedLineGroup) {
-            // if (stage.getAttr('clickedOnLine')) {
-            //     console.log('LineGroup', lineGroup);
-            //     const prevLine = lineGroup.findOne('Line');
-            //     const prevStartAnchor = lineGroup.findOne('.startAnchor');
-            //     const prevEndAnchor = lineGroup.findOne('.endAnchor');
-
-            //     // if (prevLine) prevLine.stroke('black');
-            //     if (prevStartAnchor) prevStartAnchor.visible(false);
-            //     if (prevEndAnchor) prevEndAnchor.visible(false);
-            //     contentLayer.draw();
-            //     return;
-            // }
-            console.log('click on line: before', selectedLineGroup);
             selectedLineGroup = lineGroup;
-            console.log('click on line: after', selectedLineGroup.id());
             lineGroup.moveToTop();
             boundingBox.visible(true);
             startAnchor.visible(true);
@@ -1138,7 +1060,6 @@ function restoreEditableLine(lineGroup) {
             boundingBox.visible(false);
             startAnchor.visible(false);
             endAnchor.visible(false);
-            console.log('Лол', selectedLineGroup);
             selectedLineGroup = null;
             contentLayer.draw();
         }
@@ -1148,7 +1069,6 @@ function restoreEditableLine(lineGroup) {
 function restoreLabel(lineGroup) {
     const labelIdForLine = lineLabelMap.get(lineGroup.id());
     labelGroup = contentLayer.findOne(`#${labelIdForLine}`);
-    console.log('LABEL', labelGroup);
     if (!labelGroup) {
         console.log('Невозможно восстановить подпись.');
         return;
@@ -1159,7 +1079,6 @@ function restoreLabel(lineGroup) {
 
     label.on('click', () => {
         selectedLabelGroup = label.getParent();
-        console.log('LABEL GROUP', selectedLabelGroup);
         contentLayer.draw();
     });
 

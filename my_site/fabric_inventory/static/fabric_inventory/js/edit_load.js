@@ -19,6 +19,7 @@ let lineLabelMap = null;
 
 
 function saveScene() {
+    gridLayer.setAttr('gridSize', gridSize);
     const gridLayerJSON = JSON.parse(gridLayer.toJSON());
     const contentLayerJSON = JSON.parse(contentLayer.toJSON());
 
