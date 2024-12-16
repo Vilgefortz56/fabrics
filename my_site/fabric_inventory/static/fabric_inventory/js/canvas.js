@@ -1021,7 +1021,7 @@ function getLinesWithLabels() {
     // Сортируем массив по индексу линий
     linesWithLabels = normalizeLines(linesWithLabels);
     console.log('AFTER NORMALIZE', linesWithLabels);
-    linesWithLabels = reorderLinesAndAddLengths(linesWithLabels);
+    // linesWithLabels = reorderLinesAndAddLengths(linesWithLabels);
     console.log('AFTER REORDER', linesWithLabels);
     return linesWithLabels;
 }
@@ -1045,73 +1045,6 @@ function calculateAreaFromScene() {
 
     console.log('Фигура не замкнута или не содержит линий с подписями.');
     return 0;
-}
-
-function reorderLinesAndAddLengths(lines) {
-    // Шаг 1: Собрать уникальные точки
-    const pointsSet = new Set();
-    lines.forEach(line => {
-        pointsSet.add(`${line.point1.x},${line.point1.y}`);
-        pointsSet.add(`${line.point2.x},${line.point2.y}`);
-    });
-
-    // Преобразовать в массив объектов точек
-    const points = Array.from(pointsSet).map(str => {
-        const [x, y] = str.split(',').map(Number);
-        return { x, y };
-    });
-
-    // Шаг 2: Вычислить центр фигуры
-    const center = points.reduce(
-        (acc, point) => ({
-            x: acc.x + point.x / points.length,
-            y: acc.y + point.y / points.length
-        }),
-        { x: 0, y: 0 }
-    );
-
-    // Функция для вычисления угла точки относительно центра
-    const getAngle = (point) => Math.atan2(point.y - center.y, point.x - center.x);
-
-    // Упорядочить точки против часовой стрелки
-    points.sort((a, b) => {
-        const angleA = getAngle(a);
-        const angleB = getAngle(b);
-        return angleA - angleB;
-    });
-
-    // Шаг 3: Построить упорядоченные линии
-    const reorderedLines = [];
-    for (let i = 0; i < points.length; i++) {
-        const point1 = points[i];
-        const point2 = points[(i + 1) % points.length]; // Следующая точка (замыкаем на первую)
-
-        // Найти исходную линию, соответствующую этим точкам
-        const originalLine = lines.find(line =>
-            (line.point1.x === point1.x && line.point1.y === point1.y &&
-                line.point2.x === point2.x && line.point2.y === point2.y) ||
-            (line.point2.x === point1.x && line.point2.y === point1.y &&
-                line.point1.x === point2.x && line.point1.y === point2.y)
-        );
-
-        // Если линия найдена, берём её label_obj, иначе присваиваем 0
-        const label_obj = originalLine?.label_obj || 0;
-
-        reorderedLines.push({
-            point1,
-            point2,
-            label_obj
-        });
-    }
-
-    // Шаг 4: Добавить длины к каждой линии
-    reorderedLines.forEach(line => {
-        const dx = line.point2.x - line.point1.x;
-        const dy = line.point2.y - line.point1.y;
-        line.length = Math.sqrt(dx * dx + dy * dy); // Расчёт длины
-    });
-
-    return reorderedLines;
 }
 
 // Переработанная функция вычисления площади
