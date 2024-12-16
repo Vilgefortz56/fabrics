@@ -82,11 +82,19 @@ const drawPol = document.getElementById('drawPolylineTool');
 const addLineLabelButton  = document.getElementById('addLineLabel');
 const saveDataButton = document.getElementById('saveData');
 const calculateAreaButton = document.getElementById('calculateArea');
+const setDirectionArea = document.getElementById('addDirectionArea');
 
 function setActiveButton(button) {
-    [selectToolButton, drawPol, addLineLabelButton ].forEach(btn => btn.classList.remove('bg-secondary', 'text-white', 'active-button'));
+    [selectToolButton, drawPol, addLineLabelButton, setDirectionArea ].forEach(btn => btn.classList.remove('bg-secondary', 'text-white', 'active-button'));
     button.classList.add('bg-secondary', 'text-white', 'active-button');
 }
+
+setDirectionArea.addEventListener('click', function() {
+    currentMode = 'addDirectionArea';
+    isSelectMode = false;
+    setMode(currentMode);
+    setActiveButton(this);
+});
 
 addLineLabelButton .addEventListener('click', function() {
     currentMode = 'addLineLabel';
@@ -101,11 +109,6 @@ selectToolButton.addEventListener('click', function() {
     setActiveButton(this);
 });
 
-// drawLineButton.addEventListener('click', function() {
-//     currentMode = 'drawLine';
-//     isSelectMode = false;
-//     setActiveButton(this);
-// });
 
 drawPol.addEventListener('click', function() {
     currentMode = 'drawPolyLine';
@@ -217,6 +220,10 @@ function addEditableLine(startX, startY, endX, endY) {
 
     line.on('click', (e) => {
         e.cancelBubble = true;
+        if (currentMode === 'addDirectionArea') {
+            toggleLineSelection(line);
+            return;
+        }
         if (currentMode === 'addLineLabel') {
             addLabelToLine(line);
             return;
@@ -644,18 +651,126 @@ const transformer = new Konva.Transformer({
 
 // Добавляем трансформер в слой
 contentLayer.add(transformer);
-
+let selectedLines = [];
+let lineDirectionMap = new Map();
+let indexLabels = [];
 // Функция для переключения режимов
 function setMode(mode) {
     currentMode = mode;
     stage.container().style.cursor = mode === 'drawPolyLine' ? 'crosshair' : 'default';
-
+    if (mode === 'addDirectionArea') {
+        clearSelection();
+        selectedLines = [];
+        contentLayer.draw();
+    }
     if (mode === 'select') {
         enableSelectionMode();
+        removeAllArrows();
+        hideIndexLabels();
     } else {
         disableSelectionMode();
         // transformer.nodes([]);
     }
+}
+
+function hideIndexLabels() {
+    indexLabels.forEach((label) => label.destroy());
+    indexLabels = [];
+    contentLayer.draw();
+}
+
+function removeAllArrows() {
+    selectedLines.forEach(({ lineGroup }) => {
+        removeArrow(lineGroup);
+    });
+    contentLayer.draw();
+}
+
+function toggleLineSelection(line) {
+    const lineGroup = line.getParent();
+    const lineId = lineGroup.id();
+
+    // Если линия уже выбрана, убираем её из списка
+    const index = selectedLines.findIndex((item) => item.id === lineId);
+    if (index > -1) {
+        lineDirectionMap.delete(lineId);
+        selectedLines.splice(index, 1);
+        removeArrow(lineGroup);
+        removeIndexLabel(lineGroup);
+    } else {
+        const labelId = lineLabelMap.get(lineId) || null; // Получаем id подписи, если она существует
+        lineDirectionMap.set(lineId, labelId); // Сохраняем в Map
+        selectedLines.push({ id: lineId, lineGroup });
+        addArrowToLine(lineGroup);
+        addIndexLabel(lineGroup, selectedLines.length);
+    }
+
+    contentLayer.draw();
+}
+
+function addArrowToLine(lineGroup) {
+    const line = lineGroup.findOne('.mainLine');
+    const points = line.points();
+
+    const arrow = new Konva.Line({
+        points: points,
+        fill: 'blue',
+        stroke: 'blue',
+        strokeWidth: 6,
+        name: 'directionArrow',
+    });
+
+    lineGroup.add(arrow);
+    arrow.moveToTop();
+}
+
+function removeArrow(lineGroup) {
+    const arrow = lineGroup.findOne('.directionArrow');
+    if (arrow) arrow.destroy();
+}
+
+function addIndexLabel(lineGroup, index) {
+    const line = lineGroup.findOne('.mainLine');
+    const points = line.points();
+    const midpointX = (points[0] + points[2]) / 2;
+    const midpointY = (points[1] + points[3]) / 2;
+
+    const label = new Konva.Text({
+        text: index.toString(),
+        x: midpointX,
+        y: midpointY,
+        fontSize: 26,
+        fontFamily: 'Times New Roman',
+        fill: 'red',
+        name: 'indexLabel',
+    });
+
+    indexLabels.push(label);
+    contentLayer.add(label);
+}
+
+function removeIndexLabel(lineGroup) {
+    const line = lineGroup.findOne('.mainLine');
+    const indexLabel = indexLabels.find((label) => {
+        const points = line.points();
+        const midpointX = (points[0] + points[2]) / 2;
+        const midpointY = (points[1] + points[3]) / 2;
+        return label.x() === midpointX && label.y() === midpointY;
+    });
+    if (indexLabel) {
+        indexLabel.destroy();
+        indexLabels = indexLabels.filter((label) => label !== indexLabel);
+    }
+}
+
+// Сохраняем выделенные линии в Map в указанном порядке
+function saveSelectedLinesToMap() {
+    selectedLines.forEach(({ id, lineGroup }) => {
+        const labelId = lineLabelMap.get(id) || null; // Получаем id подписи, если есть
+        lineDirectionMap.set(id, { labelId });
+    });
+
+    console.log('lineDirectionMap:', Array.from(lineDirectionMap.entries()));
 }
 
 // Включение режима выделения
@@ -803,6 +918,13 @@ window.addEventListener('keydown', (e) => {
     } else if (e.key === 'Escape') {
         if (currentMode === 'addLineLabel' || currentMode === 'drawPolyLine') {
             cancelPolylineDrawing();
+            currentMode = 'select';
+            setMode(currentMode);
+            setActiveButton(selectToolButton);
+        } else if (currentMode === 'addDirectionArea') {
+            clearSelection();
+            hideIndexLabels();
+            removeAllArrows();
             currentMode = 'select';
             setMode(currentMode);
             setActiveButton(selectToolButton);
