@@ -155,11 +155,13 @@ function addEditableLine(startX, startY, endX, endY) {
     }
 
     line.on('mouseenter', () => {
+        if (currentMode === 'addDirectionArea') return;
         boundingBox.visible(true);
         contentLayer.draw();
     });
 
     line.on('mouseleave', () => {
+        if (currentMode === 'addDirectionArea') return;
         if (!startAnchor.visible()) {
             boundingBox.visible(false);
             contentLayer.draw();
@@ -167,6 +169,7 @@ function addEditableLine(startX, startY, endX, endY) {
     });
 
     line.on('click', (e) => {
+        if (currentMode === 'addDirectionArea') return;
         e.cancelBubble = true;
         // if (currentMode === 'addDirectionArea') {
         //     toggleLineSelection(line);
@@ -207,6 +210,7 @@ function addEditableLine(startX, startY, endX, endY) {
     });
 
     lineGroup.on('dragmove', function () {
+        if (currentMode === 'addDirectionArea') return;
         const snappedPos = snapToGridPosition(lineGroup.position());
         lineGroup.position(snappedPos);
         updateLine();
@@ -675,9 +679,8 @@ function drawClosedContour() {
     // Замыкаем контур, рисуя линию между первой и последней точкой
     drawLineBetweenPoints(lastPoint, firstPoint);
     contourLayer.draw();
-    let kek = 
-    console.log(createLineArrayFromPoints(newContourPoints, ));
-    console.log('Contour coordinates:', contourCoordinates);
+    linesWithLabels = generateLineArray(newContourPoints, lineLabelMap);
+    // console.log(createLineArrayFromPoints(newContourPoints, ));
     console.log('Contour points:', newContourPoints);
 }
 
@@ -774,39 +777,54 @@ stage.on('dblclick', (e) => {
     }
 });
 
-function createLineArrayFromPoints(pointsArray, labels) {
-    const linesArray = [];
+function isSamePoint(pointA, pointB) {
+    return pointA.x === pointB.x && pointA.y === pointB.y;
+}
 
-    // Проходим по массиву точек
+function generateLineArray(pointsArray, lineToLabelMap) {
+    const linesWithLabels = [];
+
     for (let i = 0; i < pointsArray.length; i++) {
         const point1 = pointsArray[i];
-        const point2 = pointsArray[(i + 1) % pointsArray.length]; // Замыкаем последнюю точку с первой
+        const point2 = pointsArray[(i + 1) % pointsArray.length]; // Последняя точка соединяется с первой
 
-        // Ищем длину линии в массиве подписей
-        const lineLengthLabel = labels.find((label) => {
-            const labelX = Math.round(label.x());
-            const labelY = Math.round(label.y());
-            const midX = Math.round((point1.x + point2.x) / 2);
-            const midY = Math.round((point1.y + point2.y) / 2);
+        // Ищем линию, которая соединяет текущие точки
+        let matchingLineGroup = null;
+        lineToLabelMap.forEach((labelGroupId, lineGroupId) => {
+            const lineGroup = contentLayer.findOne(`#${lineGroupId}`); // Находим группу линии по ID
+            if (!lineGroup) return;
 
-            // Находим совпадение центра линии и подписи
-            return labelX === midX && labelY === midY;
+            const line = lineGroup.findOne('.mainLine'); // Ищем линию внутри группы
+            if (!line) return;
+
+            const points = line.points();
+            const linePoint1 = { x: points[0], y: points[1] };
+            const linePoint2 = { x: points[2], y: points[3] };
+
+            // Проверяем совпадение точек линии с текущей парой точек
+            if (
+                (isSamePoint(point1, linePoint1) && isSamePoint(point2, linePoint2)) ||
+                (isSamePoint(point1, linePoint2) && isSamePoint(point2, linePoint1))
+            ) {
+                matchingLineGroup = lineGroup;
+            }
         });
 
-        // Получаем длину из текста подписи или устанавливаем null, если подписи нет
-        const lineLength = lineLengthLabel ? parseInt(lineLengthLabel.text(), 10) : null;
+        // Если линия найдена, извлекаем текст подписи
+        if (matchingLineGroup) {
+            const labelGroup = contentLayer.findOne(`#${lineToLabelMap.get(matchingLineGroup.id())}`); // Находим группу подписи по ID
+            const labelText = labelGroup?.findOne('Text')?.text(); // Получаем текст подписи
 
-        // Создаем объект линии
-        const lineObject = {
-            point1: { ...point1 },
-            point2: { ...point2 },
-            label_obj: lineLength,
-        };
-
-        linesArray.push(lineObject);
+            // Формируем объект линии с подписью
+            linesWithLabels.push({
+                point1,
+                point2,
+                label_obj: labelText ? parseFloat(labelText) : null, // Преобразуем текст подписи в число
+            });
+        }
     }
 
-    return linesArray;
+    return linesWithLabels;
 }
 
 // Включение режима выделения
@@ -1036,14 +1054,10 @@ function normalizeLines(lines) {
         return line;
     });
 }
-
+let linesWithLabels = [];
 function getLinesWithLabels() {
-    let linesWithLabels = [];
-    if (lineDirectionMap.size !== 0){
-        lineLabelMap = lineDirectionMap;
-    }
+    
     console.log(lineLabelMap);
-    console.log(lineDirectionMap);
     // Перебираем все группы линий
     // contentLayer.find('Group').forEach(group => {
     lineLabelMap.forEach((labelId, lineId) => {
@@ -1069,7 +1083,9 @@ function getLinesWithLabels() {
 }
 
 function calculateAreaFromScene() {
-    const linesWithLabels = getLinesWithLabels();
+    if (linesWithLabels.length === 0) {
+        linesWithLabels = getLinesWithLabels();
+    }
 
     if (linesWithLabels.length > 0) {
         // Извлекаем реальные длины сторон из подписей
@@ -1081,6 +1097,7 @@ function calculateAreaFromScene() {
         console.log(area);
         current_area = area;
         console.log('Площадь фигуры:', area);
+        linesWithLabels = [];
         return area;
     }
 
@@ -1229,11 +1246,13 @@ function restoreEditableLine(lineGroup) {
     }
 
     line.on('mouseenter', () => {
+        if (currentMode === 'addDirectionArea') return;
         boundingBox.visible(true);
         contentLayer.draw();
     });
 
     line.on('mouseleave', () => {
+        if (currentMode === 'addDirectionArea') return;
         if (!startAnchor.visible()) {
             boundingBox.visible(false);
             contentLayer.draw();
@@ -1241,11 +1260,8 @@ function restoreEditableLine(lineGroup) {
     });
 
     line.on('click', (e) => {
+        if (currentMode === 'addDirectionArea') return;
         e.cancelBubble = true;
-        // if (currentMode === 'addDirectionArea') {
-        //     toggleLineSelection(line);
-        //     return;
-        // }
         if (currentMode === 'addLineLabel') {
             addLabelToLine(line);
             return;
@@ -1271,6 +1287,7 @@ function restoreEditableLine(lineGroup) {
     });
 
     lineGroup.on('dragmove', function () {
+        if (currentMode === 'addDirectionArea') return;
         const snappedPos = snapToGridPosition(lineGroup.position());
         lineGroup.position(snappedPos);
         updateLine();
