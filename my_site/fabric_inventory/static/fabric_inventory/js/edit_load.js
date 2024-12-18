@@ -7,11 +7,8 @@ let isFirstLoad = true;
 
 let currentArea = document.getElementById('area-data').textContent;
 document.getElementById('inputArea').value = parseFloat(currentArea.replace(',', '.'));
-console.log(currentArea);
-console.log(document.getElementById('inputArea').value);
 const currentViewId = document.getElementById('viewid-data').textContent;
 const currentStatusId = document.getElementById('status-data').textContent;
-console.log(currentStatusId);
 
 let gridLayer = null;
 let contentLayer = null;
@@ -28,7 +25,6 @@ function saveScene() {
         lineId:  line,
         labelId: label,
     }));
-    console.log(lineLabelMap);
     // Сохраняем всё в один объект
     const sceneJSON = {
         gridLayer: gridLayerJSON,
@@ -41,12 +37,7 @@ function saveScene() {
 
 function loadScene() {
     const sceneJSON = document.getElementById('canvas-data').textContent;
-    console.log('Raw data', sceneJSON);
-
-    // Парсим JSON
     const savedScene = JSON.parse(JSON.parse(sceneJSON));
-    console.log('DATA', savedScene);
-    // Восстанавливаем слои
     gridLayer = Konva.Node.create(savedScene.gridLayer);
     contentLayer = Konva.Node.create(savedScene.contentLayer);
 
@@ -90,7 +81,6 @@ document.addEventListener('DOMContentLoaded', function () {
     form.addEventListener('submit', function() {
         // Преобразуем данные canvas в JSON и записываем в скрытое поле
         const serializedData = saveScene();
-        console.log(serializedData);
         hiddenCanvasDataInput.value = JSON.stringify(serializedData);
         let imageDataURL = stage.toDataURL({
             mimeType: 'image/png', // Вы можете изменить на 'image/jpeg', если нужно
@@ -116,7 +106,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     
                     // Устанавливаем текущий вид, если он совпадает с переданным
                     if (isFirstLoad && fabricView.id == data.current_view_id) {
-                        console.log('Лел');
                         option.selected = true;
                     }
                 });
@@ -130,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     statusSelect.appendChild(option);
                     // Устанавливаем текущий статус, если он совпадает с переданным
                     if (isFirstLoad && (status.id == data.current_status_id.replace(/^"(.+)"$/, '$1'))) {
-                        console.log('условие выполнено');
                         option.selected = true;
                     }
                 });

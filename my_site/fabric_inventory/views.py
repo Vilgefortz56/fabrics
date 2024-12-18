@@ -240,7 +240,6 @@ def upload_fabric_image(request):
             title = f'image_user_{user.username}_{datetime.now().strftime("%Y-%m-%d")}'
             image_data = base64.b64decode(image_base64)
             fabric = Fabric(
-                title=title,
                 user=user,
                 area=round(area, 2),
                 status=status,

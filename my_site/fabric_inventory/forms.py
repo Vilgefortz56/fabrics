@@ -48,22 +48,12 @@ class FabricFilterForm(forms.Form):
         selected_views = self.data.getlist('fabric_views') if 'fabric_views' in self.data else self.initial.get('fabric_views')
         if selected_views:
             self.fields['fabric_views'].initial = selected_views
-        # Динамическое обновление fabric_views в зависимости от выбранных fabric_types
-        # if 'fabric_types' in self.data:
-        #     try:
-        #         fabric_types_ids = self.data.getlist('fabric_types')
-        #         self.fields['fabric_views'].queryset = FabricView.objects.filter(fabric_type__id__in=fabric_types_ids)
-        #     except (ValueError, TypeError):
-        #         # self.fields['fabric_views'].queryset = FabricView.objects.none()
-        #         pass
-        # elif self.initial.get('fabric_types'):
-        #     self.fields['fabric_views'].queryset = FabricView.objects.filter(fabric_type__in=self.initial['fabric_types'])
 
 
 class FabricEditForm(forms.ModelForm):
     class Meta:
         model = Fabric
-        fields = ['title', 'fabric_type', 'status', 'area', 'fabric_view']
+        fields = ['fabric_type', 'status', 'area', 'fabric_view']
         widgets = {
             'fabric_type': forms.Select(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
@@ -72,7 +62,6 @@ class FabricEditForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self.fields['area'].initial = kwargs.get('initial').get('area')
         self.fields['fabric_type'].empty_label = None
         self.fields['fabric_view'].empty_label = None
         self.fields['status'].empty_label = None
@@ -84,35 +73,3 @@ class FabricEditForm(forms.ModelForm):
         selected_views = self.data.getlist('fabric_views') if 'fabric_views' in self.data else self.initial.get('fabric_views')
         if selected_views:
             self.fields['fabric_views'].initial = selected_views
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.fields['fabric_type'].queryset = FabricType.objects.exclude(name='---------')
-
-    # def __init__(self, *args, **kwargs):
-    #     # Получаем значение из параметра initial_data, переданного из представления
-    #     initial_data = kwargs.pop('initial_data', None)
-    #     super().__init__(*args, **kwargs)
-    #     if initial_data:
-    #         # Устанавливаем значение поля
-    #         self.fields['area'].initial = initial_data
-
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     # Устанавливаем доступные виды ткани в зависимости от выбранных типов
-    #     selected_types = self.data.getlist('fabric_type') if 'fabric_type' in self.data else self.initial.get('fabric_type')
-    #     if selected_types:
-    #         self.fields['fabric_view'].queryset = FabricView.objects.filter(fabric_type__id__in=selected_types)
-
-    #     # Устанавливаем выбранные значения для видов тканей, если они были переданы
-    #     selected_views = self.data.getlist('fabric_view') if 'fabric_view' in self.data else self.initial.get('fabric_view')
-    #     if selected_views:
-    #         self.fields['fabric_view'].initial = selected_views
-        # Добавляем пустую опцию для поля fabric_view
-        #self.fields['fabric_view'].queryset = FabricView.objects.none()  # Изначально пусто
-        # if 'fabric_type' in self.data:
-        #     try:
-        #         fabric_type_id = int(self.data.get('fabric_type'))
-        #         self.fields['fabric_view'].queryset = FabricView.objects.filter(fabric_type_id=fabric_type_id)
-        #     except (ValueError, TypeError):
-        #         pass

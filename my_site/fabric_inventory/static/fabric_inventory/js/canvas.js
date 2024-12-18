@@ -28,7 +28,6 @@ document.getElementById('categorySelect').addEventListener('change', updateViewO
 
 // Инициализация при первой загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOMContentLoaded");
     updateViewOptions();
 });
 
@@ -77,7 +76,6 @@ document.getElementById('gridSize').addEventListener('input', function() {
 let currentMode = 'select';
 let selectedObjects = [];
 const selectToolButton = document.getElementById('selectTool');
-// const drawLineButton = document.getElementById('addLine');
 const drawPol = document.getElementById('drawPolylineTool');
 const addLineLabelButton  = document.getElementById('addLineLabel');
 const saveDataButton = document.getElementById('saveData');
@@ -88,9 +86,9 @@ function setActiveButton(button) {
     [selectToolButton, drawPol, addLineLabelButton, setDirectionArea ].forEach(btn => btn.classList.remove('bg-secondary', 'text-white', 'active-button'));
     button.classList.add('bg-secondary', 'text-white', 'active-button');
 }
-
 setDirectionArea.addEventListener('click', function() {
     currentMode = 'addDirectionArea';
+    startDrawingContour();
     isSelectMode = false;
     setMode(currentMode);
     setActiveButton(this);
@@ -115,7 +113,6 @@ drawPol.addEventListener('click', function() {
     isSelectMode = false;
     setMode(currentMode);
     setActiveButton(this);
-    // startDrawingPolyline();
 });
 
 // Функция привязки к сетке
@@ -126,9 +123,6 @@ function snapToGrid(value, gridSize) {
 let selectedLineGroup = null;
 let selectedLabelGroup = null;
 function addEditableLine(startX, startY, endX, endY) {
-    console.log('Creating line from', startX, startY, 'to', endX, endY);
-
-    // const lineGroup = new Konva.Group({ draggable: true, name: 'selectable' });
     const lineId = `line-${Date.now()}-${Math.random()}`;
     const lineGroup = new Konva.Group({ draggable: true, name: 'selectable', id: lineId });
 
@@ -207,11 +201,13 @@ function addEditableLine(startX, startY, endX, endY) {
     }
 
     line.on('mouseenter', () => {
+        if (currentMode === 'addDirectionArea') return;
         boundingBox.visible(true);
         contentLayer.draw();
     });
 
     line.on('mouseleave', () => {
+        if (currentMode === 'addDirectionArea') return;
         if (!startAnchor.visible()) {
             boundingBox.visible(false);
             contentLayer.draw();
@@ -219,24 +215,12 @@ function addEditableLine(startX, startY, endX, endY) {
     });
 
     line.on('click', (e) => {
+        if (currentMode === 'addDirectionArea') return;
         e.cancelBubble = true;
-        // if (currentMode === 'addDirectionArea') {
-        //     toggleLineSelection(line);
-        //     return;
-        // }
         if (currentMode === 'addLineLabel') {
             addLabelToLine(line);
             return;
         } else if (currentMode === 'select') {
-            // if (selectedLineGroup) {
-            //     const prevLine = selectedLineGroup.findOne('Line');
-            //     const prevStartAnchor = selectedLineGroup.findOne('Circle');
-            //     const prevEndAnchor = selectedLineGroup.findOne('Circle:last-child');
-
-            //     // if (prevLine) prevLine.stroke('black');
-            //     if (prevStartAnchor) prevStartAnchor.visible(false);
-            //     if (prevEndAnchor) prevEndAnchor.visible(false);
-            // }
             selectedLineGroup = lineGroup;
             lineGroup.moveToTop();
             boundingBox.visible(true);
@@ -259,6 +243,7 @@ function addEditableLine(startX, startY, endX, endY) {
     });
 
     lineGroup.on('dragmove', function () {
+        if (currentMode === 'addDirectionArea') return;
         const snappedPos = snapToGridPosition(lineGroup.position());
         lineGroup.position(snappedPos);
         updateLine();
@@ -293,10 +278,10 @@ function getLineCoordinates(line) {
 
 let isAddingLabels = false; 
 let lineLabelMap = new Map();
+let linesWithLabels = [];
 
 function addLabelToLine(line) {
     if (lineLabelMap.has(line.getParent().id())) {
-        alert('У этой линии уже есть подпись.');
         return;
     }
 
@@ -307,9 +292,7 @@ function addLabelToLine(line) {
         id: labelId,
     });
     const lineGroup = line.getParent();
-    console.log('lineGroup', lineGroup);
     const linePoints = getLineCoordinates(line);
-    console.log('linePoints', linePoints);
     const midpointX = (linePoints[0] + linePoints[2]) / 2;
     const midpointY = (linePoints[1] + linePoints[3]) / 2;
 
@@ -584,10 +567,7 @@ function simplifyPolyline(points_array) {
 // Завершение рисования полилинии с учетом замыкания
 function finishPolyline() {
     if (!isDrawingPolyline) return;
-
-    
     polylinePoints = simplifyPolyline(polylinePoints);
-    console.log('После упрощения', polylinePoints);
     polylinePoints = arrayToDict(polylinePoints);
 
     const pos = stage.getPointerPosition();
@@ -597,7 +577,6 @@ function finishPolyline() {
     // Проверяем, кликнули ли мы в начальную точку
     const distanceToStart = Math.hypot(snappedX - polylinePoints[0].x, snappedY - polylinePoints[0].y);
     const isClosingPolyline = distanceToStart < gridSize;
-    console.log('Это начальная точка?', isClosingPolyline);
 
     // Проверяем, замкнута ли полилиния
     const firstPoint = polylinePoints[0];
@@ -651,127 +630,250 @@ const transformer = new Konva.Transformer({
 
 // Добавляем трансформер в слой
 contentLayer.add(transformer);
-let selectedLines = [];
-let lineDirectionMap = new Map();
-let indexLabels = [];
-// Функция для переключения режимов
 function setMode(mode) {
     currentMode = mode;
     stage.container().style.cursor = mode === 'drawPolyLine' ? 'crosshair' : 'default';
     if (mode === 'addDirectionArea') {
+        cancelPolylineDrawing();
         clearSelection();
         selectedLines = [];
         contentLayer.draw();
+    } else if (mode === 'drawPolyLine') {
+        clearSelection();
+        selectedLines = [];
+        contourLayer.clear();
+        clearContourLayer();
+    } else if (mode === 'addLineLabel') {
+        cancelPolylineDrawing();
+        clearSelection();
+        selectedLines = [];
+        contourLayer.clear();
+        clearContourLayer();
     }
     if (mode === 'select') {
+        cancelPolylineDrawing();
         enableSelectionMode();
-        // removeAllArrows();
-        // hideIndexLabels();
+        contourLayer.clear();
+        clearContourLayer();
     } else {
         disableSelectionMode();
-        // transformer.nodes([]);
     }
 }
 
-// function hideIndexLabels() {
-//     indexLabels.forEach((label) => label.destroy());
-//     indexLabels = [];
-//     contentLayer.draw();
-// }
 
-// function removeAllArrows() {
-//     selectedLines.forEach(({ lineGroup }) => {
-//         removeArrow(lineGroup);
-//     });
-//     contentLayer.draw();
-// }
+let newContourPoints = []; // Массив для хранения координат нового контура
+let isDrawingContour = false; // Флаг, указывающий, что мы рисуем контур
+let contourCoordinates = {}; // Объект для хранения координат точек контура
+let contourLayer = new Konva.Layer(); // Слой для нового контура
+stage.add(contourLayer); // Добавляем слой к сцене
 
-// function toggleLineSelection(line) {
-//     const lineGroup = line.getParent();
-//     const lineId = lineGroup.id();
+function startDrawingContour() {
+    isDrawingContour = true;
+    newContourPoints = [];
+    contourCoordinates = {};
+    contourLayer.clear();
+    contourLayer.draw();
+}
 
-//     // Если линия уже выбрана, убираем её из списка
-//     const index = selectedLines.findIndex((item) => item.id === lineId);
-//     if (index > -1) {
-//         lineDirectionMap.delete(lineId);
-//         selectedLines.splice(index, 1);
-//         removeArrow(lineGroup);
-//         removeIndexLabel(lineGroup);
-//     } else {
-//         const labelId = lineLabelMap.get(lineId) || null; // Получаем id подписи, если она существует
-//         lineDirectionMap.set(lineId, labelId); // Сохраняем в Map
-//         selectedLines.push({ id: lineId, lineGroup });
-//         addArrowToLine(lineGroup);
-//         addIndexLabel(lineGroup, selectedLines.length);
-//     }
+function addContourPoint(x, y) {
+    const pointIndex = newContourPoints.length + 1;
+    const pointName = `point${newContourPoints.length + 1}`;
+    contourCoordinates[pointName] = { x, y };
+    newContourPoints.push({ x, y });
 
-//     contentLayer.draw();
-// }
+    // Добавляем визуальную точку на сцену
+    const point = new Konva.Circle({
+        x,
+        y,
+        radius: 8,
+        fill: 'green',
+        stroke: 'black',
+        strokeWidth: 1,
+        name: `contourPoint_${newContourPoints.length}`, // Уникальное имя для точки
+    });
+    
+    contourLayer.add(point);
+    
+    const pointLabel = new Konva.Text({
+        x: x + 10, // Расположение рядом с точкой
+        y: y - 10,
+        text: pointIndex.toString(),
+        fontSize: 24,
+        fontFamily: 'Times New Roman',
+        fill: 'red',
+        name: `pointLabel_${pointIndex}`,
+    });
+    contourLayer.add(pointLabel);
 
-// function addArrowToLine(lineGroup) {
-//     const line = lineGroup.findOne('.mainLine');
-//     const points = line.points();
+    // Отрисовываем линию после второго клика
+    if (newContourPoints.length > 1) {
+        const lastPoint = newContourPoints[newContourPoints.length - 2];
+        drawLineBetweenPoints(lastPoint, { x, y });
+    }
 
-//     const arrow = new Konva.Line({
-//         points: points,
-//         fill: 'blue',
-//         stroke: 'blue',
-//         strokeWidth: 6,
-//         name: 'directionArrow',
-//     });
+    point.moveToTop(); // Перемещаем круг поверх линий
+    pointLabel.moveToTop(); // Поднимаем подпись поверх
+    contourLayer.draw();
+}
 
-//     lineGroup.add(arrow);
-//     arrow.moveToTop();
-// }
+function drawLineBetweenPoints(point1, point2) {
+    const line = new Konva.Line({
+        points: [point1.x, point1.y, point2.x, point2.y],
+        stroke: 'blue',
+        strokeWidth: 6,
+        name: 'contourLine',
+    });
+    contourLayer.add(line);
+    line.moveToBottom();
+}
 
-// function removeArrow(lineGroup) {
-//     const arrow = lineGroup.findOne('.directionArrow');
-//     if (arrow) arrow.destroy();
-// }
+function drawClosedContour() {
+    const firstPoint = newContourPoints[0];
+    const lastPoint = newContourPoints[newContourPoints.length - 1];
+    drawLineBetweenPoints(lastPoint, firstPoint);
+    contourLayer.draw();
+    linesWithLabels = generateLineArray(newContourPoints, lineLabelMap);
+}
 
-// function addIndexLabel(lineGroup, index) {
-//     const line = lineGroup.findOne('.mainLine');
-//     const points = line.points();
-//     const midpointX = (points[0] + points[2]) / 2;
-//     const midpointY = (points[1] + points[3]) / 2;
 
-//     const label = new Konva.Text({
-//         text: index.toString(),
-//         x: midpointX,
-//         y: midpointY,
-//         fontSize: 26,
-//         fontFamily: 'Times New Roman',
-//         fill: 'red',
-//         name: 'indexLabel',
-//     });
+function isPointOnGridIntersection(x, y) {
+    const snappedX = snapToGrid(x, gridSize);
+    const snappedY = snapToGrid(y, gridSize);
 
-//     indexLabels.push(label);
-//     contentLayer.add(label);
-// }
+    for (const line1 of contentLayer.find('.mainLine')) {
+        for (const line2 of contentLayer.find('.mainLine')) {
+            if (line1 === line2) continue; 
+            const intersection = findLineIntersection(line1, line2);
+            if (intersection) {
+                const { x: ix, y: iy } = intersection;
+                if (snapToGrid(ix, gridSize) === snappedX && snapToGrid(iy, gridSize) === snappedY) {
+                    return { x: snappedX, y: snappedY };
+                }
+            }
+        }
+    }
+    return null;
+}
 
-// function removeIndexLabel(lineGroup) {
-//     const line = lineGroup.findOne('.mainLine');
-//     const indexLabel = indexLabels.find((label) => {
-//         const points = line.points();
-//         const midpointX = (points[0] + points[2]) / 2;
-//         const midpointY = (points[1] + points[3]) / 2;
-//         return label.x() === midpointX && label.y() === midpointY;
-//     });
-//     if (indexLabel) {
-//         indexLabel.destroy();
-//         indexLabels = indexLabels.filter((label) => label !== indexLabel);
-//     }
-// }
 
-// // Сохраняем выделенные линии в Map в указанном порядке
-// function saveSelectedLinesToMap() {
-//     selectedLines.forEach(({ id, lineGroup }) => {
-//         const labelId = lineLabelMap.get(id) || null; // Получаем id подписи, если есть
-//         lineDirectionMap.set(id, { labelId });
-//     });
+function findLineIntersection(line1, line2) {
+    const [x1, y1, x2, y2] = line1.points();
+    const [x3, y3, x4, y4] = line2.points();
 
-//     console.log('lineDirectionMap:', Array.from(lineDirectionMap.entries()));
-// }
+    const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+    if (denom === 0) return null;
+
+    const px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom;
+    const py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom;
+
+    return { x: px, y: py };
+}
+
+function clearContourLayer() {
+    contourLayer.destroyChildren();
+    newContourPoints = [];
+    contourCoordinates = {};
+    isDrawingContour = false;
+    contourLayer.draw();
+}
+
+stage.on('click', (e) => {
+    if (!isDrawingContour) return;
+
+    const pointerPos = stage.getPointerPosition();
+    const { x, y } = pointerPos;
+
+    const intersection = isPointOnGridIntersection(x, y);
+    if (intersection ) {
+        // Проверяем, чтобы не добавлять точку дважды
+        const isDuplicate = newContourPoints.some(
+            (point) => point.x === intersection.x && point.y === intersection.y
+        );
+        if (newContourPoints.length > 0){
+            if (newContourPoints[0].x === intersection.x && newContourPoints[0].y === intersection.y) {
+                drawClosedContour();
+                isDrawingContour = false;
+                return;
+            }
+        }
+        if (isDuplicate) {
+            return;
+        }
+
+        if (newContourPoints.length > 0) {
+            const firstPoint = newContourPoints[0];
+            const tolerance = 5;
+            if (
+                Math.abs(intersection.x - firstPoint.x) <= tolerance &&
+                Math.abs(intersection.y - firstPoint.y) <= tolerance
+            ) {
+                drawClosedContour();
+                isDrawingContour = false;
+                return;
+            }
+        }
+        addContourPoint(intersection.x, intersection.y);
+    }
+});
+
+stage.on('dblclick', (e) => {
+    if (!isDrawingContour) return;
+    if (newContourPoints.length > 2) {
+        drawClosedContour();
+        isDrawingContour = false;
+    }
+});
+
+function isSamePoint(pointA, pointB) {
+    return pointA.x === pointB.x && pointA.y === pointB.y;
+}
+
+function generateLineArray(pointsArray, lineToLabelMap) {
+    const linesWithLabels = [];
+
+    for (let i = 0; i < pointsArray.length; i++) {
+        const point1 = pointsArray[i];
+        const point2 = pointsArray[(i + 1) % pointsArray.length]; // Последняя точка соединяется с первой
+
+        // Ищем линию, которая соединяет текущие точки
+        let matchingLineGroup = null;
+        lineToLabelMap.forEach((labelGroupId, lineGroupId) => {
+            const lineGroup = contentLayer.findOne(`#${lineGroupId}`); // Находим группу линии по ID
+            if (!lineGroup) return;
+
+            const line = lineGroup.findOne('.mainLine'); // Ищем линию внутри группы
+            if (!line) return;
+
+            const points = line.points();
+            const linePoint1 = { x: points[0], y: points[1] };
+            const linePoint2 = { x: points[2], y: points[3] };
+
+            // Проверяем совпадение точек линии с текущей парой точек
+            if (
+                (isSamePoint(point1, linePoint1) && isSamePoint(point2, linePoint2)) ||
+                (isSamePoint(point1, linePoint2) && isSamePoint(point2, linePoint1))
+            ) {
+                matchingLineGroup = lineGroup;
+            }
+        });
+
+        // Если линия найдена, извлекаем текст подписи
+        if (matchingLineGroup) {
+            const labelGroup = contentLayer.findOne(`#${lineToLabelMap.get(matchingLineGroup.id())}`); // Находим группу подписи по ID
+            const labelText = labelGroup?.findOne('Text')?.text(); // Получаем текст подписи
+
+            // Формируем объект линии с подписью
+            linesWithLabels.push({
+                point1,
+                point2,
+                label_obj: labelText ? parseFloat(labelText) : null, // Преобразуем текст подписи в число
+            });
+        }
+    }
+
+    return linesWithLabels;
+}
+
 
 // Включение режима выделения
 function enableSelectionMode() {
@@ -871,8 +973,6 @@ function deleteSelectedElements() {
 
 window.addEventListener('keydown', (e) => {
     if (e.key === 'Delete') {
-        console.log('SEL LINE', selectedLineGroup);
-        console.log('Sel Group', selectedLabelGroup);
         if (currentMode === 'select') {
             if (selectedLabelGroup) {
                 // Находим ID линии, связанной с выбранной подписью
@@ -881,7 +981,6 @@ window.addEventListener('keydown', (e) => {
                 )?.[0];
 
                 if (!lineIdForLabel) {
-                    console.log('Не удалось найти линию для подписи');
                     return;
                 }
 
@@ -895,13 +994,11 @@ window.addEventListener('keydown', (e) => {
             } else if (selectedLineGroup) {
                 // Находим ID подписи, связанной с выбранной линией
                 const labelIdForLine = lineLabelMap.get(selectedLineGroup.id());
-                console.log('Label ID FOR LINE', labelIdForLine);
 
                 if (labelIdForLine) {
                     // Удаляем подпись
                     const labelGroupForLine = contentLayer.findOne(`#${labelIdForLine}`);
                     labelGroupForLine.destroy();
-                    console.log('Удалил подпись.')
                 }
 
                 // Удаляем линию и связь из lineLabelMap
@@ -923,8 +1020,6 @@ window.addEventListener('keydown', (e) => {
             setActiveButton(selectToolButton);
         } else if (currentMode === 'addDirectionArea') {
             clearSelection();
-            hideIndexLabels();
-            removeAllArrows();
             currentMode = 'select';
             setMode(currentMode);
             setActiveButton(selectToolButton);
@@ -1042,82 +1137,56 @@ function reorderLinesAndAddLengths(lines) {
     return reorderedLines;
 }
 
-function myMap(map) {
-    map.forEach(value => {
-        console.log(value);
-        let labelGroup = contentLayer.findOne(`#${value}`);
-        let text = labelGroup.findOne('Text');
-        console.log('Размер', text.text());
-    });
-}
 
 function getLinesWithLabels() {
-    let linesWithLabels = [];
-    console.log(lineLabelMap);
-    // Перебираем все группы линий
-    contentLayer.find('Group').forEach(group => {
-        const line = group.findOne('.mainLine'); // Находим линию в группе
-        const lineId = group.id(); // ID текущей группы линии
-
-        // Ищем подпись в lineLabelMap
-        const labelId = lineLabelMap.get(lineId); // Получаем ID связанной подписи
-        const labelGroup = labelId ? contentLayer.findOne(`#${labelId}`) : null; // Находим группу подписи по ID
-        console.log('LABEL ID', labelGroup);
+    lineLabelMap.forEach((labelId, lineId) => {
+        const line = contentLayer.findOne(`#${lineId}`).findOne('.mainLine');
+        const labelGroup = contentLayer.findOne(`#${labelId}`);
         if (line && labelGroup) {
             const points = line.points(); // Координаты линии
             const labelText = labelGroup.findOne('Text'); // Находим текст подписи внутри группы
             linesWithLabels.push({
                 point1: { x: points[0], y: points[1] }, // Начальная точка
                 point2: { x: points[2], y: points[3] }, // Конечная точка
-                label_obj: parseFloat(labelText.text().replace(',', '.')), 
+                label_obj: parseFloat(labelText.text().replace(',', '.')), // Объект текста подписи
             });
         }
     });
-    console.log('LINE Index', linesWithLabels);
     // Сортируем массив по индексу линий
     linesWithLabels = normalizeLines(linesWithLabels);
-    // console.log('AFTER NORMALIZE', linesWithLabels);
     linesWithLabels = reorderLinesAndAddLengths(linesWithLabels);
-    // console.log('AFTER REORDER', linesWithLabels);
+
     return linesWithLabels;
 }
 
-function orderVertices(linesWithLabels) {
-    const vertices = [];
-    const visited = new Set();
-    let currentPoint = linesWithLabels[0].point1; // Начинаем с первой точки
-    while (vertices.length < linesWithLabels.length) {
-        vertices.push(currentPoint);
-        visited.add(JSON.stringify(currentPoint));
-        // Ищем следующую линию, которая начинается в currentPoint
-        const nextLine = linesWithLabels.find(line => 
-            !visited.has(JSON.stringify(line.point2)) && 
-            (line.point1.x === currentPoint.x && line.point1.y === currentPoint.y)
-        );
-    return vertices;
-    }
-}
 
 function calculateAreaFromScene() {
-    const linesWithLabels = getLinesWithLabels();
-    console.log('linesWithLabels', linesWithLabels);
-
-    if (linesWithLabels.length > 0) {
+    if (currentMode === 'addDirectionArea' && linesWithLabels.length > 0){
         // Извлекаем реальные длины сторон из подписей
         const realSideLengths = linesWithLabels.map(line => line.label_obj);
         vertices = linesWithLabels.map(line => line.point1);
-        // const vertices = orderVertices(linesWithLabels);
         // Вычисляем площадь
         const area = (calculatePolygonAreaWithRealDimensions(vertices, realSideLengths)/1000000).toFixed(2);
         inputArea.value = area;
-        console.log(area);
         current_area = area;
         console.log('Площадь фигуры:', area);
+        linesWithLabels = [];
+        currentMode = 'select';
+        setMode(currentMode);
+        setActiveButton(selectToolButton);
+        return area;
+    } else {
+        linesWithLabels = getLinesWithLabels();
+        const realSideLengths = linesWithLabels.map(line => line.label_obj);
+        vertices = linesWithLabels.map(line => line.point1);
+        // Вычисляем площадь
+        const area = (calculatePolygonAreaWithRealDimensions(vertices, realSideLengths)/1000000).toFixed(2);
+        inputArea.value = area;
+        current_area = area;
+        console.log('Площадь фигуры:', area);
+        linesWithLabels = [];
         return area;
     }
-
-    console.log('Фигура не замкнута или не содержит линий с подписями.');
-    return 0;
 }
 
 // Переработанная функция вычисления площади
@@ -1226,7 +1295,6 @@ function sendCroppedImageToServer() {
         pixelRatio: 1,        // Увеличение разрешения
     });
     let canvasData = saveScene();
-    console.log(canvasData);
     const selectElement = document.getElementById('categorySelect');
     // Получаем CSRF-токен
     const csrftoken = getCSRFToken();
@@ -1263,12 +1331,7 @@ function sendCroppedImageToServer() {
 document.getElementById('saveData').addEventListener('click', function() {
     confirmationModal.show();
 });
-// drawPol.addEventListener('click', () => setMode('drawPolyline'));
-// Привязываем запуск рисования полилинии к кнопке
 drawPol.addEventListener('click', startDrawingPolyline);
-// Привязка функции добавления линии к кнопке
-// drawPol.addEventListener('click', addEditablePolyline);
-// selectToolButton.addEventListener('click', () => setMode('select'));
 saveDataButton.addEventListener('click', saveScene);
 setMode(currentMode);
 setActiveButton(selectToolButton);

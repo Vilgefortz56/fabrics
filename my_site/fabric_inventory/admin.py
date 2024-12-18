@@ -21,17 +21,13 @@ class CustomUserAdmin(UserAdmin):
     model = CustomUser
     list_display = ['username', 'role', 'is_staff', 'is_active']
     list_filter = ['role', 'is_staff', 'is_active']
-    fieldsets = UserAdmin.fieldsets + (
-        (None, {'fields': ('role',)}),  # Добавляем роль в форму
+    fieldsets =  (
+        (None, {'fields': ('role',)}),
+        (None, {'fields': ('username', 'password')}), 
+        ('Персональная информация', {'fields': ('first_name', 'last_name', 'email')}),
+        ('Важные даты', {'fields': ('last_login', 'date_joined')}),
+        ('Права доступа', {'fields': ('is_active', 'is_staff', 'is_superuser')}),  # Добавляем роль в форму созданияUserAdmin.add_fieldsets +
     )
-    add_fieldsets = UserAdmin.add_fieldsets + (
-        (None, {'fields': ('role',)}),  # Добавляем роль в форму создания
-    )
-
-
-# Register your models here.
-# class CustomUserAdmin(admin.ModelAdmin):
-#     list_display = ('username', 'role')
 
 class FabricTypeAdmin(admin.ModelAdmin):
     list_display = ('name', )
@@ -40,8 +36,9 @@ class FabricViewAdmin(admin.ModelAdmin):
     list_display = ('name', )
 
 class FabricAdmin(admin.ModelAdmin):
-    readonly_fields = ('title', 'image', 'canvas_data', 'date_added', 'date_updated')
-    list_display = ('user', 'status', 'area', 'date_added', 'date_updated') #'area', 'user', 'status'
+    readonly_fields = ('image', 'canvas_data', 'date_added', 'date_updated')
+    list_display = ('user', 'status', 'area', 'date_added', 'date_updated')
+    list_filter = ('user', 'status', 'date_added', 'date_updated')
     def has_add_permission(self, request):
         return False
 

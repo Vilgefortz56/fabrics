@@ -1,11 +1,8 @@
 import os
 from django.db import models
 from datetime import datetime
-from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
-
 from django.conf import settings
-
 
 
 # Create your models here.
@@ -51,7 +48,6 @@ def user_directory_path(instance: CustomUser, filename):
 
 class Fabric(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.SET_DEFAULT, default='Anonymous', verbose_name='Пользователь', blank=True, null=True)
-    title = models.CharField(max_length=100, blank=True, null=True, verbose_name='Название')
     image = models.ImageField(upload_to=user_directory_path, height_field=None, width_field=None, max_length=None, 
                               blank=True, null=True, verbose_name='Изображение')
     canvas_data = models.JSONField(blank=True, null=True, verbose_name='Данные ткани')
@@ -65,8 +61,8 @@ class Fabric(models.Model):
         ('used', 'Использована'),
     ], verbose_name='Статус')
 
-    # def __str__(self):
-    #     return self.title
+    def __str__(self):
+        return f"Ткань {self.pk}"
 
     def delete(self, *args, **kwargs):
         # Удаляем файл с сервера
