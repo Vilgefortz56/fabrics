@@ -180,7 +180,16 @@ class FabricsHome(ListView):
             views_data = FabricView.objects.filter(fabric_type=fabric_type)
             views_by_type[fabric_type.name] = views_data
         filter_params = self.request.GET.copy()
+
+        fabric_hierarchy = []
+        for fabric in self.get_queryset():
+            ancestors = fabric.get_ancestors(include_self=False)
+            fabric_hierarchy.append({
+                'fabric': fabric,
+                'hierarchy': " -> ".join([node.name for node in ancestors]) + f" -> {fabric.name}",
+            })
         context.update({
+            'fabric_hierarchy': fabric_hierarchy,
             'form': form,
             'title': 'Список тканей',
             'per_page': per_page,
@@ -190,6 +199,16 @@ class FabricsHome(ListView):
             'filter_params': filter_params.urlencode()
         })
         return context
+        # context.update({
+        #     'form': form,
+        #     'title': 'Список тканей',
+        #     'per_page': per_page,
+        #     'selected_fabric_types': selected_fabric_types,
+        #     'selected_fabric_views': selected_fabric_views,
+        #     'views_by_type': views_by_type,
+        #     'filter_params': filter_params.urlencode()
+        # })
+        # return context
 
 class LoginUser(LoginView):
     form_class = CustomLoginForm

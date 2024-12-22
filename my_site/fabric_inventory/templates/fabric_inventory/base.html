@@ -30,7 +30,7 @@
                   <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'fabric_inventory:home'%}">Все ткани</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link {% if request.resolver_match.url_name == 'add_fabric' %}active{% endif %}" href="{% url 'fabric_inventory:add_fabric' %}">Добавить ткань</a>
+                  <a class="nav-link {% if request.resolver_match.url_name == 'add_fabric' %}active{% endif %}" href="{% url 'fabric_inventory:add_fabric' %}">Добавить</a>
                 </li>
                 {% if request.user.is_authenticated %}
                   {% if request.user.is_superuser or request.user.role == 'admin' %}

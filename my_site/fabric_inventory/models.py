@@ -3,6 +3,8 @@ from django.db import models
 from datetime import datetime
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
+from django.forms import ValidationError
+from mptt.models import MPTTModel, TreeForeignKey
 
 
 # Create your models here.
@@ -18,7 +20,39 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.username
 
+class FabricNode(MPTTModel):
+    name = models.CharField(max_length=100, verbose_name="Название")
+    parent = TreeForeignKey(
+        'self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', verbose_name="Родительский элемент"
+    )
+    node_type = models.CharField(
+        max_length=20,
+        choices=(
+            ('type', 'Тип ткани'),
+            ('view', 'Вид ткани'),
+            ('material', 'Материал'),
+        ),
+        verbose_name="Тип узла"
+    )
 
+    class MPTTMeta:
+        order_insertion_by = ['name']
+
+    class Meta:
+        verbose_name = "Элемент ткани"
+        verbose_name_plural = "Элементы ткани"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'parent'],
+                name='unique_name_within_parent'
+            )
+        ]
+
+
+    def __str__(self):
+        return self.name
+    
+    
 class FabricType(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name='Тип ткани')
 
@@ -42,6 +76,18 @@ class FabricView(models.Model):
         verbose_name_plural = 'Виды тканей'
 
 
+class FabricMaterial(models.Model):
+    name = models.CharField(max_length=100, unique=True, verbose_name='Материал ткани')
+    fabric_view = models.ForeignKey(FabricView, related_name='materials', on_delete=models.CASCADE, default=None, verbose_name='Материал')
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name = 'Материал'
+        verbose_name_plural = 'Материалы'
+
+
 def user_directory_path(instance: CustomUser, filename):
     # Путь будет вида: "user_<id>/YYYY-MM-DD/filename"
     return f'user_{instance.user.username}/{datetime.now().strftime("%Y-%m-%d")}/{filename}'
@@ -54,6 +100,7 @@ class Fabric(models.Model):
     area = models.FloatField(blank=True, null=True, verbose_name='Площадь')
     fabric_view = models.ForeignKey(FabricView, on_delete=models.CASCADE, default=None, verbose_name='Вид ткани', blank=True, null=True)
     fabric_type = models.ForeignKey(FabricType, on_delete=models.CASCADE, default=None, verbose_name='Тип ткани', blank=True, null=True)
+    fabric_material = models.ForeignKey(FabricMaterial, on_delete=models.CASCADE, default=None, verbose_name='Тип ткани', blank=True, null=True)
     date_added = models.DateTimeField(auto_now_add=True, verbose_name='Дата добавления')
     date_updated = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
     status = models.CharField(max_length=20, choices=[
