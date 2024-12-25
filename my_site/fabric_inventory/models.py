@@ -58,34 +58,40 @@ class FabricType(models.Model):
 
     def __str__(self):
         return self.name
-    
+
     class Meta:
         verbose_name = 'Тип ткани'
         verbose_name_plural = 'Типы тканей'
 
 
 class FabricView(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name='Вид ткани')
-    fabric_type = models.ForeignKey(FabricType, related_name='views', on_delete=models.CASCADE, default=None, verbose_name='Тип ткани')
+    name = models.CharField(max_length=100, verbose_name='Вид ткани')
+    fabric_type = models.ForeignKey(
+        FabricType, related_name='views', on_delete=models.CASCADE, verbose_name='Тип ткани'
+    )
 
     def __str__(self):
-        return self.name
-    
+        return f"{self.fabric_type.name} -> {self.name}"
+
     class Meta:
         verbose_name = 'Вид ткани'
         verbose_name_plural = 'Виды тканей'
+        unique_together = ('name', 'fabric_type')  # Уникальность видов в рамках типа
 
 
 class FabricMaterial(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name='Материал ткани')
-    fabric_view = models.ForeignKey(FabricView, related_name='materials', on_delete=models.CASCADE, default=None, verbose_name='Материал')
+    name = models.CharField(max_length=100, verbose_name='Материал ткани')
+    fabric_view = models.ForeignKey(
+        FabricView, related_name='materials', on_delete=models.CASCADE, verbose_name='Вид ткани'
+    )
 
     def __str__(self):
-        return self.name
-    
+        return f"{self.fabric_view.fabric_type.name} -> {self.fabric_view.name} -> {self.name}"
+
     class Meta:
         verbose_name = 'Материал'
         verbose_name_plural = 'Материалы'
+        unique_together = ('name', 'fabric_view') 
 
 
 def user_directory_path(instance: CustomUser, filename):

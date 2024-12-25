@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'fabric_inventory',
     'spurl',
+    'nested_admin',
 ]
 
 AUTH_USER_MODEL = 'fabric_inventory.CustomUser'

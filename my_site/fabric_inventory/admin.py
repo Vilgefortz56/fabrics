@@ -1,4 +1,5 @@
 from django.contrib import admin
+import nested_admin
 from mptt.admin import DraggableMPTTAdmin
 from .models import Fabric, CustomUser, FabricType, FabricView, FabricMaterial, FabricNode
 from django.contrib.auth.models import Group
@@ -44,48 +45,83 @@ class CustomUserAdmin(UserAdmin):
 
 
 # Inline для материалов
-class FabricMaterialInline(admin.TabularInline):
+# class FabricMaterialInline(admin.TabularInline):
+#     model = FabricMaterial
+#     extra = 0  # Позволяет добавлять новые записи
+#     fields = ('name',)
+#     verbose_name = "Материал"
+#     verbose_name_plural = "Материалы"
+
+
+# # Inline для видов ткани с вложенными материалами
+# class FabricViewInline(admin.StackedInline):
+#     model = FabricView
+#     extra = 0
+#     fields = ('name', 'fabric_type')
+#     verbose_name = "Вид ткани"
+#     verbose_name_plural = "Виды тканей"
+#     inlines = [FabricMaterialInline]
+
+#     # Для отображения вложенных материалов в виде
+#     def get_queryset(self, request):
+#         return super().get_queryset(request).prefetch_related('materials')
+
+
+# # Админка для типа ткани с вложенными видами ткани
+# @admin.register(FabricType)
+# class FabricTypeAdmin(admin.ModelAdmin):
+#     list_display = ('name',)
+#     inlines = [FabricViewInline]
+
+
+# # Админка для видов ткани
+# @admin.register(FabricView)
+# class FabricViewAdmin(admin.ModelAdmin):
+#     list_display = ('name', 'fabric_type')
+#     list_filter = ('fabric_type',)
+#     inlines = [FabricMaterialInline]
+
+
+# # Админка для материалов
+# @admin.register(FabricMaterial)
+# class FabricMaterialAdmin(admin.ModelAdmin):
+#     list_display = ('name', 'fabric_view')
+
+
+# Инлайн для материалов
+class FabricMaterialInline(nested_admin.NestedTabularInline):
     model = FabricMaterial
-    extra = 0  # Позволяет добавлять новые записи
-    fields = ('name',)
-    verbose_name = "Материал"
-    verbose_name_plural = "Материалы"
+    extra = 1  # Количество пустых строк для добавления материалов
+    fields = ['name']
 
-
-# Inline для видов ткани с вложенными материалами
-class FabricViewInline(admin.StackedInline):
+# Инлайн для видов, в который вложены материалы
+class FabricViewInline(nested_admin.NestedStackedInline):
     model = FabricView
-    extra = 0
-    fields = ('name', 'fabric_type')
-    verbose_name = "Вид ткани"
-    verbose_name_plural = "Виды тканей"
-    inlines = [FabricMaterialInline]
+    extra = 1  # Количество пустых строк для добавления видов
+    inlines = [FabricMaterialInline]  # Встраиваем инлайн материалов внутрь видов
+    fields = ['name', 'fabric_type']  
 
-    # Для отображения вложенных материалов в виде
-    def get_queryset(self, request):
-        return super().get_queryset(request).prefetch_related('materials')
+# Админка для типов тканей
+# @admin.register(FabricType)
+class FabricTypeAdmin(nested_admin.NestedModelAdmin):
+    list_display = ['name']  # Поля для отображения в списке типов
+    inlines = [FabricViewInline]  # Встраиваем виды с материалами
+    search_fields = ['name']  # Поиск по имени типа ткани
+    list_filter = ['name']  # Фильтрация по имени
 
-
-# Админка для типа ткани с вложенными видами ткани
-@admin.register(FabricType)
-class FabricTypeAdmin(admin.ModelAdmin):
-    list_display = ('name',)
-    inlines = [FabricViewInline]
-
-
-# Админка для видов ткани
+# Дополнительная админка для отдельного управления видами (по желанию)
 @admin.register(FabricView)
 class FabricViewAdmin(admin.ModelAdmin):
-    list_display = ('name', 'fabric_type')
-    list_filter = ('fabric_type',)
-    inlines = [FabricMaterialInline]
+    list_display = ['name', 'fabric_type']
+    search_fields = ['name']
+    list_filter = ['fabric_type']
 
-
-# Админка для материалов
+# Админка для материалов (по желанию)
 @admin.register(FabricMaterial)
 class FabricMaterialAdmin(admin.ModelAdmin):
-    list_display = ('name', 'fabric_view')
-
+    list_display = ['name', 'fabric_view']
+    search_fields = ['name']
+    list_filter = ['fabric_view']
 
 # Админка для Fabric с настройками
 class FabricAdmin(admin.ModelAdmin):
@@ -96,7 +132,7 @@ class FabricAdmin(admin.ModelAdmin):
     def has_add_permission(self, request):
         return False
 
-
+admin.site.register(FabricType, FabricTypeAdmin)
 # Регистрация моделей
 admin.site.register(Fabric, FabricAdmin)
 admin.site.register(CustomUser, CustomUserAdmin)
