@@ -33,6 +33,18 @@
                         {% endif %}
                         {% endfor %}
                     </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="fabric_type" class="form-label">Материал:</label>
+                    <select name="fabric_material" id="fabric_material" class="form-select">
+                        {% for choice in form.fabric_material.field.choices %}
+                        {% if choice.1 != "---------" %}
+                            <option value="{{ choice.0 }}" {% if choice.0 == fabric.fabric_material.id %} selected="selected" {% endif %}>
+                                {{ choice.1 }}
+                            </option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
                 </div> 
                 <!-- Статус -->
                 <div class="col-md-3">
@@ -55,6 +67,7 @@
                 </div>
             </div>
             <div class="row">
+                {{form.fabric_material.field.choices}}
                 <div class="col-md-6">
                     <div class="toolbar d-flex justify-content-start mb-3 mt-2">
                         {% include 'fabric_inventory/edit_menu.html' %}

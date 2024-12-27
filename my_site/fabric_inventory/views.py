@@ -16,7 +16,7 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse, reverse_lazy
 
 from .forms import CustomLoginForm, FabricFilterForm, FabricEditForm
-from .models import Fabric, FabricType, FabricView
+from .models import Fabric, FabricMaterial, FabricType, FabricView
 from django.views.decorators.csrf import csrf_exempt
 import base64
 
@@ -25,21 +25,28 @@ import base64
 def add_fabric_page(request):
     fabric_types = FabricType.objects.all()
     fabric_views = FabricView.objects.all()
+    fabric_materials = FabricMaterial.objects.all()
 
     # Формируем словарь для передачи в JSON
     fabric_data = {
-        fabric_type.id: list(fabric_type.views.values('id', 'name'))
-        for fabric_type in fabric_types
+        fabric_type.id: {
+            'views': {
+                view.id: {
+                    'name': view.name,
+                    'materials': list(view.materials.values('id', 'name'))
+                } for view in fabric_type.views.all()
+            }
+        } for fabric_type in fabric_types
     }
     return render(request, 'fabric_inventory/fabric_canvas.html', {'fabric_types': fabric_types, 
                                                                    'fabric_views': fabric_views,
+                                                                   'fabric_materials': fabric_materials,
                                                                    'fabric_data': fabric_data})
 
 def login(request):
     return render(request, 'fabric_inventory/login.html')
 
 def home_page(request):
-
     return render(request, 'fabric_inventory/home.html')
 
 @csrf_exempt
@@ -58,6 +65,18 @@ def get_fabric_views(request, fabric_type_id):
             }
     return JsonResponse(data, safe=False)
 
+@csrf_exempt
+def get_fabric_materials(request, fabric_view_id):
+    fabric_materials = FabricMaterial.objects.filter(fabric_view_id=fabric_view_id)
+    materials_data = [{'id': material.id, 'name': material.name} for material in fabric_materials]
+    current_material_id = request.GET.get('current_material_id')
+    
+    data = {
+        'materials': materials_data,
+        'current_material_id': current_material_id,
+    }
+    
+    return JsonResponse(data, safe=False)
 
 @csrf_exempt
 def get_fabric_views_ajax(request):
@@ -73,6 +92,23 @@ def get_fabric_views_ajax(request):
         return JsonResponse({"views": data})
 
     return JsonResponse({"views": []})
+
+@csrf_exempt
+def get_fabric_materials_ajax(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        fabric_view_ids = data.get("fabric_views", [])
+        response_data = {}
+
+        for fabric_view in FabricView.objects.filter(id__in=fabric_view_ids):
+            materials = FabricMaterial.objects.filter(fabric_view=fabric_view)
+            response_data[fabric_view.name] = list(materials.values('id', 'name'))
+
+        return JsonResponse({"materials": response_data})
+
+    return JsonResponse({"materials": []})
+
+
 
 
 class FabricDeleteView(LoginRequiredMixin, View):
@@ -149,6 +185,11 @@ class FabricsHome(ListView):
             fabric_views = form.cleaned_data.get('fabric_views')
             if fabric_views:
                 queryset = queryset.filter(fabric_view__in=fabric_views)
+
+            fabric_materials = form.cleaned_data.get('fabric_materials')
+            if fabric_materials:
+                queryset = queryset.filter(fabric_material__in=fabric_materials)
+
         self.queryset = queryset
         return queryset
 
@@ -173,42 +214,33 @@ class FabricsHome(ListView):
         # Получаем выбранные типы и виды для передачи в шаблон
         selected_fabric_types = form.data.getlist('fabric_types')
         selected_fabric_views = form.data.getlist('fabric_views')
+        selected_fabric_materials = form.data.getlist('fabric_materials')
 
         # Создаем структуру для отображения подписей
         views_by_type = {}
         for fabric_type in FabricType.objects.filter(id__in=selected_fabric_types):
             views_data = FabricView.objects.filter(fabric_type=fabric_type)
             views_by_type[fabric_type.name] = views_data
+
+        materials_by_view = {}
+        for fabric_view in FabricView.objects.filter(id__in=selected_fabric_views):
+            materials_data = FabricMaterial.objects.filter(fabric_view=fabric_view)
+            materials_by_view[fabric_view.name] = materials_data
+
         filter_params = self.request.GET.copy()
 
-        fabric_hierarchy = []
-        for fabric in self.get_queryset():
-            ancestors = fabric.get_ancestors(include_self=False)
-            fabric_hierarchy.append({
-                'fabric': fabric,
-                'hierarchy': " -> ".join([node.name for node in ancestors]) + f" -> {fabric.name}",
-            })
         context.update({
-            'fabric_hierarchy': fabric_hierarchy,
             'form': form,
             'title': 'Список тканей',
             'per_page': per_page,
             'selected_fabric_types': selected_fabric_types,
             'selected_fabric_views': selected_fabric_views,
+            'selected_fabric_materials': selected_fabric_materials,
             'views_by_type': views_by_type,
+            'materials_by_view': materials_by_view,
             'filter_params': filter_params.urlencode()
         })
         return context
-        # context.update({
-        #     'form': form,
-        #     'title': 'Список тканей',
-        #     'per_page': per_page,
-        #     'selected_fabric_types': selected_fabric_types,
-        #     'selected_fabric_views': selected_fabric_views,
-        #     'views_by_type': views_by_type,
-        #     'filter_params': filter_params.urlencode()
-        # })
-        # return context
 
 class LoginUser(LoginView):
     form_class = CustomLoginForm
@@ -249,12 +281,18 @@ def upload_fabric_image(request):
         status = body_data.get('status')
         fabrictype_id = int(body_data.get('fabrictype_id'))
         fabricview_id = body_data.get('fabricview_id')
+        fabricmaterial_id = body_data.get('fabricmaterial_id')
         canvas_data = body_data.get('canvas_data')
         fabrictype_instance = FabricType.objects.get(pk=fabrictype_id)
         if fabricview_id is None:    
             fabricview_instance = None
         else:
             fabricview_instance = FabricView.objects.get(pk=fabricview_id)
+
+        if fabricmaterial_id is None:    
+            fabricmaterial_instance = None
+        else:
+            fabricmaterial_instance = FabricMaterial.objects.get(pk=fabricmaterial_id)
         if image_base64:
             title = f'image_user_{user.username}_{datetime.now().strftime("%Y-%m-%d")}'
             image_data = base64.b64decode(image_base64)
@@ -264,6 +302,7 @@ def upload_fabric_image(request):
                 status=status,
                 fabric_type = fabrictype_instance,
                 fabric_view = fabricview_instance,
+                fabric_material = fabricmaterial_instance,
                 canvas_data = json.dumps(canvas_data),
             )
             fabric.image.save(f"{title}.png", ContentFile(image_data), save=True)

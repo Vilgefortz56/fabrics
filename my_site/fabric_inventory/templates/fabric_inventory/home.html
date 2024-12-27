@@ -39,6 +39,19 @@
                         {% endfor %}
                     {% endfor %}
                 </div>
+                <div class="mb-3" id="material-container">
+                    <h5>{{ form.fabric_materials.label }}</h5>
+                    {% for view, materials in materials_by_view.items %}
+                        <small class="small fw-bold text-muted">{{ view }}</small>
+                        {% for material in materials %}
+                            <div class="form-check">
+                                <input type="checkbox" name="fabric_materials" value="{{ material.id }}" class="form-check-input" 
+                                       {% if material.id|stringformat:"s" in selected_fabric_materials %}checked{% endif %}>
+                                <label class="form-check-label">{{ material.name }}</label>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>                
                 <button type="submit" class="btn btn-secondary">Применить</button>
                 <div class="mb-2 mt-2">
                     <a href="{% url 'fabric_inventory:home' %}" class="btn btn-outline-secondary">Сбросить фильтры</a>
@@ -84,8 +97,9 @@
                             {% if request.user.is_superuser or request.user.role == 'admin' or request.user.role == 'store'%} mb-0 pb-0 {% endif %} {% endif %}">
                             <h5 class="card-title">Ткань {{ fabric.id }} </h5>
                             <p class="card-text">Добавлено: {{ fabric.user.username }}</p>
-                            <p class="card-text">Тип материала:<span class="card-text fw-bold"> {{ fabric.fabric_type.name }}</span></p> 
-                            <p class="card-text">Вид материала:<span class="card-text fw-bold"> {{ fabric.fabric_view.name }}</span></p> 
+                            <p class="card-text">Материал:<span class="card-text fw-bold"> {{ fabric.fabric_type.name }} -> {{ fabric.fabric_view.name }} -> {{ fabric.fabric_material.name }}</span></p> 
+                            {% comment %} <p class="card-text">Вид материала:<span class="card-text fw-bold"> {{ fabric.fabric_view.name }}</span></p> 
+                            <p class="card-text">Материал:<span class="card-text fw-bold"> {{ fabric.fabric_material.name }}</span></p> {% endcomment %}
                             <p class="card-text">Площадь: {{ fabric.area }}</p>
                             <p class="card-text mb-0">Статус: {% if fabric.status == 'available' %}
                                                                 <span class="badge text-bg-success">В наличии</span>
@@ -190,8 +204,10 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const typeCheckboxes = document.querySelectorAll(".fabric-type");
-        const viewContainer = document.getElementById("view-container");
-        
+        const viewCheckboxes = document.querySelectorAll("input[name='fabric_views']");
+        const viewCheckboxesContainer = document.getElementById("view-container");
+        const materialContainer = document.getElementById("material-container");
+    
         function updateFabricViews(selectedTypes) {
             fetch("{% url 'fabric_inventory:get_fabric_views_ajax' %}", {
                 method: "POST",
@@ -207,24 +223,22 @@
                 const selectedViews = Array.from(document.querySelectorAll("input[name='fabric_views']:checked")).map(input => input.value);
     
                 // Очищаем предыдущие виды ткани и добавляем заголовок
-                viewContainer.innerHTML = "<h5>{{ form.fabric_views.label }}</h5>";
+                viewCheckboxesContainer.innerHTML = "<h5>{{ form.fabric_views.label }}</h5>";
     
                 // Добавляем виды ткани по типам
                 for (const type in data.views) {
                     const typeLabel = document.createElement("small");
-                    typeLabel.classList.add("small", "fw-bold", "text-muted");
-                    typeLabel.textContent = type; // Используем переменную `type`
-                    viewContainer.appendChild(typeLabel);
+                    typeLabel.classList.add("small", "fw-bold", "text-muted", "d-block");
+                    typeLabel.textContent = type; 
+                    viewCheckboxesContainer.appendChild(typeLabel);
     
-                    // Добавляем каждый вид ткани как чекбокс
-                    data.views[type].forEach(view => { // Предполагается, что `data.views[type]` - массив
+                    data.views[type].forEach(view => {
                         const checkbox = document.createElement("input");
                         checkbox.type = "checkbox";
                         checkbox.name = "fabric_views";
                         checkbox.value = view.id;
                         checkbox.classList.add("form-check-input");
     
-                        // Отмечаем чекбокс, если он был выбран до обновления
                         if (selectedViews.includes(view.id.toString())) {
                             checkbox.checked = true;
                         }
@@ -238,12 +252,80 @@
                         div.classList.add("form-check");
                         div.appendChild(label);
     
-                        viewContainer.appendChild(div);
+                        viewCheckboxesContainer.appendChild(div);
+    
+                        // Добавляем обработчик изменения для обновления материалов
+                        checkbox.addEventListener("change", function() {
+                            const selectedViews = Array.from(document.querySelectorAll("input[name='fabric_views']:checked")).map(input => input.value);
+                            updateFabricMaterials(selectedViews);
+                        });
                     });
                 }
             })
             .catch(error => console.error("Ошибка:", error));
         }
+    
+        function updateFabricMaterials(selectedViews) {
+            fetch("{% url 'fabric_inventory:get_fabric_materials_ajax' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({ fabric_views: selectedViews })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Сохраняем выбранные fabric_materials
+                const selectedMaterials = Array.from(document.querySelectorAll("input[name='fabric_materials']:checked")).map(input => input.value);
+    
+                // Очищаем предыдущие материалы и добавляем заголовок
+                materialContainer.innerHTML = "<h5>{{ form.fabric_materials.label }}</h5>";
+    
+                // Добавляем материалы по видам
+                for (const view in data.materials) {
+                    const viewLabel = document.createElement("small");
+                    viewLabel.classList.add("small", "fw-bold", "text-muted", "d-block");
+                    viewLabel.textContent = view; // Используем название вида
+                    materialContainer.appendChild(viewLabel);
+    
+                    // Добавляем каждый материал как чекбокс
+                    data.materials[view].forEach(material => {
+                        const checkbox = document.createElement("input");
+                        checkbox.type = "checkbox";
+                        checkbox.name = "fabric_materials";
+                        checkbox.value = material.id;
+                        checkbox.classList.add("form-check-input");
+    
+                        // Отмечаем чекбокс, если он был выбран до обновления
+                        if (selectedMaterials.includes(material.id.toString())) {
+                            checkbox.checked = true;
+                        }
+    
+                        const label = document.createElement("label");
+                        label.classList.add("form-check-label");
+                        label.appendChild(checkbox);
+                        label.append(" " + material.name);
+    
+                        const div = document.createElement("div");
+                        div.classList.add("form-check");
+                        div.appendChild(label);
+    
+                        materialContainer.appendChild(div);
+                    });
+                }
+            })
+            .catch(error => console.error("Ошибка:", error));
+        }
+    
+        viewCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener("change", function() {
+                const selectedViews = Array.from(viewCheckboxes)
+                                            .filter(cb => cb.checked)
+                                            .map(cb => cb.value);
+                updateFabricMaterials(selectedViews);
+            });
+        });
     
         typeCheckboxes.forEach(checkbox => {
             checkbox.addEventListener("change", function() {
@@ -254,6 +336,7 @@
             });
         });
     });
+    
 </script>
 
 <!-- Подключение JS файла -->

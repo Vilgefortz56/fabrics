@@ -1,31 +1,109 @@
 // Передаем данные типов и видов в JavaScript
 const rawData = document.getElementById('fabricData').textContent;
 const fabricData = JSON.parse(rawData);
+console.log(fabricData);
 
-// Функция для обновления вариантов "Вид материала" в зависимости от выбранного "Типа материала"
 function updateViewOptions() {
     const selectedTypeId = document.getElementById('categorySelect').value;
     const viewSelect = document.getElementById('viewSelect');
-    // Очистка текущих вариантов "Вид материала"
+    const materialSelect = document.getElementById('materialSelect');
+    
+    // Очистка текущих вариантов "Вид материала" и "Материал"
     viewSelect.innerHTML = '';
-    // Если выбран тип, добавляем соответствующие варианты
+    materialSelect.innerHTML = '';
+
     if (selectedTypeId && fabricData[selectedTypeId]) {
-        fabricData[selectedTypeId].forEach(function(view, index) {
+        const views = fabricData[selectedTypeId].views;
+
+        if (Object.keys(views).length > 0) {
+            Object.entries(views).forEach(([viewId, viewData], index) => {
+                const option = document.createElement('option');
+                option.value = viewId;
+                option.textContent = viewData.name;
+                viewSelect.appendChild(option);
+
+                // Автоматически выбираем первый вид ткани
+                if (index === 0) {
+                    viewSelect.value = viewId;
+                    updateMaterialOptions(viewId); // Обновляем материалы
+                }
+            });
+        } else {
+            // Если нет видов, вставляем "----"
             const option = document.createElement('option');
-            option.value = view.id;
-            option.textContent = view.name;
+            option.value = '';
+            option.textContent = '----';
             viewSelect.appendChild(option);
-            // Автоматически выбираем первый вид ткани
-            if (index === 0) {
-                viewSelect.value = view.id;
+        }
+    } else {
+        // Если нет типа, вставляем "----"
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = '----';
+        viewSelect.appendChild(option);
+    }
+
+    // Если виды очищены или недоступны, очищаем материалы
+    if (viewSelect.value === '') {
+        updateMaterialOptions('');
+    }
+}
+
+// Функция для обновления вариантов "Материал" в зависимости от выбранного "Вида материала"
+function updateMaterialOptions(selectedViewId) {
+    const materialSelect = document.getElementById('materialSelect');
+    const selectedTypeId = document.getElementById('categorySelect').value;
+
+    // Очистка текущих вариантов "Материал"
+    materialSelect.innerHTML = '';
+
+    if (selectedTypeId && fabricData[selectedTypeId]) {
+        const views = fabricData[selectedTypeId].views;
+
+        if (selectedViewId && views[selectedViewId] && views[selectedViewId].materials) {
+            const materials = views[selectedViewId].materials;
+
+            if (materials.length > 0) {
+                materials.forEach(function (material, index) {
+                    const option = document.createElement('option');
+                    option.value = material.id;
+                    option.textContent = material.name;
+                    materialSelect.appendChild(option);
+
+                    // Автоматически выбираем первый материал
+                    if (index === 0) {
+                        materialSelect.value = material.id;
+                    }
+                });
+            } else {
+                // Если нет материалов, вставляем "----"
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = '----';
+                materialSelect.appendChild(option);
             }
-        });
+        } else {
+            // Если вид не выбран или недоступен, вставляем "----"
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = '----';
+            materialSelect.appendChild(option);
+        }
+    } else {
+        // Если тип не выбран или недоступен, вставляем "----"
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = '----';
+        materialSelect.appendChild(option);
     }
 }
 
 // Событие при изменении выбора "Типа материала"
 document.getElementById('categorySelect').addEventListener('change', updateViewOptions);
-
+document.getElementById('viewSelect').addEventListener('change', function () {
+    const selectedViewId = this.value;
+    updateMaterialOptions(selectedViewId);
+});
 // Инициализация при первой загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
     updateViewOptions();
@@ -1311,6 +1389,7 @@ function sendCroppedImageToServer() {
                                 status: 'available',
                                 fabrictype_id: parseInt(selectElement.value),
                                 fabricview_id: parseInt(document.getElementById('viewSelect').value),
+                                fabricmaterial_id: parseInt(document.getElementById('materialSelect').value),
                                 canvas_data: canvasData,
                                 })
     })

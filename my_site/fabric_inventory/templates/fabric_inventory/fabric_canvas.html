@@ -50,7 +50,7 @@
       <input type="text" class="form-control " id="inputArea" placeholder="Площадь">
       <label class="form-label mb-0 ms-2">кв. м.</label>
     </div>
-    <div class="d-flex align-items-center mb-0 ms-0" style="white-space: nowrap;" id="area">
+    <div class="d-flex align-items-center mb-0 ms-0" style="white-space: nowrap;" id="type_material">
       <label class="form-label mb-0">Тип материала:</label>
       <select class="form-select" id="categorySelect" name="category">
         {% for type in fabric_types %}
@@ -58,11 +58,19 @@
         {% endfor %}
       </select> 
     </div>
-    <div class="d-flex align-items-center mb-0 ms-0" style="white-space: nowrap;" id="area">
+    <div class="d-flex align-items-center mb-0 ms-2" style="white-space: nowrap;" id="view_material">
       <label class="form-label mb-0">Вид материала:</label>
       <select class="form-select" id="viewSelect" name="category">
         {% for view in fabric_views %}
             <option value="{{ view.id }}">{{ view.name }}</option>
+        {% endfor %}
+      </select> 
+    </div>
+    <div class="d-flex align-items-center mb-0 ms-2" style="white-space: nowrap;" id="material">
+      <label class="form-label mb-0">Материал:</label>
+      <select class="form-select" id="materialSelect" name="category">
+        {% for material in fabric_materials %}
+            <option value="{{ material.id }}">{{ material.name }}</option>
         {% endfor %}
       </select> 
     </div>
@@ -75,5 +83,6 @@
 </main>
 
 <!-- Подключение JS файла -->
-<script src="{% static 'fabric_inventory/js/min/canvas.min.js' %}"></script>
+{% comment %} <script src="{% static 'fabric_inventory/js/min/canvas.min.js' %}"></script> {% endcomment %}
+<script src="{% static 'fabric_inventory/js/canvas.js' %}"></script>
 {% endblock%}

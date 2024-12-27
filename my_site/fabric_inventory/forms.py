@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
-from .models import FabricType, Fabric, FabricView
+from .models import FabricType, Fabric, FabricView, FabricMaterial
 
 class CustomLoginForm(AuthenticationForm):
     username = forms.CharField(
@@ -33,21 +33,42 @@ class FabricFilterForm(forms.Form):
         required=False,
         label="Вид материала"
     )
+
+    fabric_materials = forms.ModelMultipleChoiceField(
+        queryset=FabricMaterial.objects.none(),
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input me-2 fabric-material'}),
+        required=False,
+        label="Материал"
+    )
+
     def clean_status(self):
         status = self.cleaned_data.get('status', '')
         return status.strip()  # Убираем пробелы в начале и в конце
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Устанавливаем доступные виды ткани в зависимости от выбранных типов
-        selected_types = self.data.getlist('fabric_types') if 'fabric_types' in self.data else self.initial.get('fabric_types')
+
+        print("self.data:", self.data)
+        print("self.initial:", self.initial)
+
+        selected_types = self.data.getlist('fabric_types') if 'fabric_types' in self.data else self.initial.get('fabric_types', [])
+        print("Selected types:", selected_types)
+        
+        # Обработка типов материала
+        selected_types = self.data.getlist('fabric_types') if self.data else self.initial.get('fabric_types', [])
         if selected_types:
             self.fields['fabric_views'].queryset = FabricView.objects.filter(fabric_type__id__in=selected_types)
 
-        # Устанавливаем выбранные значения для видов тканей, если они были переданы
-        selected_views = self.data.getlist('fabric_views') if 'fabric_views' in self.data else self.initial.get('fabric_views')
+        # Обработка видов материала
+        selected_views = self.data.getlist('fabric_views') if self.data else self.initial.get('fabric_views', [])
         if selected_views:
-            self.fields['fabric_views'].initial = selected_views
+            self.fields['fabric_materials'].queryset = FabricMaterial.objects.filter(fabric_view__id__in=selected_views)
+        
+        # Установка выбранных значений для материалов
+        selected_materials = self.data.getlist('fabric_materials') if self.data else self.initial.get('fabric_materials', [])
+        if selected_materials:
+            self.fields['fabric_materials'].initial = selected_materials
+
 
 
 class FabricEditForm(forms.ModelForm):

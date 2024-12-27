@@ -64,6 +64,7 @@ document.addEventListener("DOMContentLoaded",  loadScene);
 document.addEventListener('DOMContentLoaded', function () {
     const fabricTypeSelect = document.querySelector('[name="fabric_type"]');
     const fabricViewSelect = document.querySelector('[name="fabric_view"]');
+    const fabricMaterialSelect = document.querySelector('[name="fabric_material"]');
     const statusSelect = document.querySelector('[name="status"]');
     const form = document.getElementById('fabricEditForm');
     const hiddenCanvasDataInput = document.getElementById('canvasData');
@@ -83,16 +84,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const serializedData = saveScene();
         hiddenCanvasDataInput.value = JSON.stringify(serializedData);
         let imageDataURL = stage.toDataURL({
-            mimeType: 'image/png', // Вы можете изменить на 'image/jpeg', если нужно
-            quality: 1,           // Качество (для JPEG)
-            pixelRatio: 1,        // Увеличение разрешения
+            mimeType: 'image/png', 
+            quality: 1,           
+            pixelRatio: 1,        
         });
         document.getElementById('editImage').value = imageDataURL;
     });
     fabricTypeSelect.addEventListener('change', function () {
         const fabricTypeId = this.value;
         if (fabricTypeId) {
-            // Отправляем AJAX запрос для получения соответствующих видов ткани
+            // Отправляем AJAX-запрос для получения видов ткани
             fetch(`/get_fabric_views/${fabricTypeId}/?current_view_id=${currentViewId}&current_status_id=${currentStatusId}`)
             .then(response => response.json())
             .then(data => {
@@ -122,12 +123,41 @@ document.addEventListener('DOMContentLoaded', function () {
                         option.selected = true;
                     }
                 });
+
+                // Триггер обновления материалов
+                if (fabricViewSelect.value) {
+                    fabricViewSelect.dispatchEvent(new Event('change'));
+                }
                 isFirstLoad = false;
             });
         }
     });
 
-    // Если страница уже была загружена с выбранным типом ткани
+    fabricViewSelect.addEventListener('change', function () {
+        const fabricViewId = this.value;
+        if (fabricViewId) {
+            // Отправляем AJAX-запрос для получения материалов
+            fetch(`/get_fabric_materials/${fabricViewId}/?current_material_id=${currentMaterialId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Обновляем "Материал"
+                fabricMaterialSelect.innerHTML = ''; // Очистить существующие опции
+                data.materials.forEach(function (material) {
+                    const option = document.createElement('option');
+                    option.value = material.id;
+                    option.textContent = material.name;
+                    fabricMaterialSelect.appendChild(option);
+
+                    // Устанавливаем текущий материал, если он совпадает с переданным
+                    if (isFirstLoad && material.id == data.current_material_id) {
+                        option.selected = true;
+                    }
+                });
+            });
+        }
+    });
+
+    // Если страница уже была загружена с выбранным типом и видом ткани
     if (fabricTypeSelect.value) {
         fabricTypeSelect.dispatchEvent(new Event('change'));
     }
