@@ -1,29 +1,27 @@
 const delete_modal = new bootstrap.Modal(document.getElementById('deleteModal'));
 const delete_btn = document.getElementById('delete');
 delete_btn.addEventListener('click', function() {
-    delete_modal.hide(); // Закрываем модальное окно
+    delete_modal.hide(); 
 
 });
 function toggleNested(id) {
     const element = document.getElementById(id);
-    console.log(element);
     if (element.style.display === "none" || element.style.display === "") {
-        element.style.display = "block";  // Показываем подкатегории
+        element.style.display = "block";  
     } else {
-        element.style.display = "none";   // Скрываем подкатегории
+        element.style.display = "none";   
     }
 }
 
 document.getElementById('deleteBtn').addEventListener('click', function(event) {
-    event.preventDefault(); // Остановить стандартную отправку формы
+    event.preventDefault(); 
     delete_modal.show();
 });
 
-// Находим кнопку удаления в модальном окне
+
 document.getElementById('delete').addEventListener('click', function() {
-    // Ищем форму, которая уже привязана к кнопке удаления
-    var form = document.getElementById('deleteForm');  // ID формы, которую будем отправлять
+    var form = document.getElementById('deleteForm');  
     if (form) {
-        form.submit();  // Отправляем форму
+        form.submit();  
     }
 });

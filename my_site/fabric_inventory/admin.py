@@ -93,3 +93,5 @@ class FabricAdmin(admin.ModelAdmin):
 admin.site.register(Fabric, FabricAdmin)
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.unregister(Group)
+admin.site.site_header = 'Администрирование Мир Ремней'
+admin.site.site_title = 'Администрирование Мир Ремней'

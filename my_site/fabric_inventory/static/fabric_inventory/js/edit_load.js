@@ -9,29 +9,25 @@ let currentArea = document.getElementById('area-data').textContent;
 document.getElementById('inputArea').value = parseFloat(currentArea.replace(',', '.'));
 const currentViewId = document.getElementById('viewid-data').textContent;
 const currentStatusId = document.getElementById('status-data').textContent;
+const currentMaterialId = document.getElementById('materialid-data').textContent;
 
 let gridLayer = null;
 let contentLayer = null;
 let lineLabelMap = null;
 
-
 function saveScene() {
     gridLayer.setAttr('gridSize', gridSize);
     const gridLayerJSON = JSON.parse(gridLayer.toJSON());
     const contentLayerJSON = JSON.parse(contentLayer.toJSON());
-
-    // Генерируем Map как массив объектов
     const mapArray = Array.from(lineLabelMap.entries()).map(([line, label]) => ({
         lineId:  line,
         labelId: label,
     }));
-    // Сохраняем всё в один объект
     const sceneJSON = {
         gridLayer: gridLayerJSON,
         contentLayer: contentLayerJSON,
         lineLabelMap: mapArray,
     };
-
     return sceneJSON;
 }
 
@@ -40,28 +36,19 @@ function loadScene() {
     const savedScene = JSON.parse(JSON.parse(sceneJSON));
     gridLayer = Konva.Node.create(savedScene.gridLayer);
     contentLayer = Konva.Node.create(savedScene.contentLayer);
-
-    // Очищаем существующие слои
     stage.findOne('#gridLayer')?.destroy();
     stage.findOne('#contentLayer')?.destroy();
-
-    // Добавляем восстановленные слои на сцену
     stage.add(gridLayer);
     stage.add(contentLayer);
-
-    // Восстанавливаем карту lineLabelMap
     lineLabelMap = new Map();
-
     savedScene.lineLabelMap.forEach(({ lineId, labelId }) => {
         lineLabelMap.set(lineId, labelId);
     });
     contentLayer.draw();
 }
 
-
 document.addEventListener("DOMContentLoaded",  loadScene);
-// document.addEventListener("DOMContentLoaded", renderCanvas);
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     const fabricTypeSelect = document.querySelector('[name="fabric_type"]');
     const fabricViewSelect = document.querySelector('[name="fabric_view"]');
     const fabricMaterialSelect = document.querySelector('[name="fabric_material"]');
@@ -69,96 +56,86 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('fabricEditForm');
     const hiddenCanvasDataInput = document.getElementById('canvasData');
 
-    // Проверка на существование формы и скрытого поля
-    if (!form) {
-        console.error("Form with id 'fabricEditForm' not found.");
-        return;
-    }
-    if (!hiddenCanvasDataInput) {
-        console.error("Hidden input with id 'canvasData' not found.");
+    if (!form || !hiddenCanvasDataInput) {
+        console.error("Form or hidden input not found.");
         return;
     }
 
-    form.addEventListener('submit', function() {
-        // Преобразуем данные canvas в JSON и записываем в скрытое поле
+    form.addEventListener('submit', function () {
         const serializedData = saveScene();
         hiddenCanvasDataInput.value = JSON.stringify(serializedData);
-        let imageDataURL = stage.toDataURL({
-            mimeType: 'image/png', 
-            quality: 1,           
-            pixelRatio: 1,        
+        const imageDataURL = stage.toDataURL({
+            mimeType: 'image/png',
+            quality: 1,
+            pixelRatio: 1,
         });
         document.getElementById('editImage').value = imageDataURL;
     });
-    fabricTypeSelect.addEventListener('change', function () {
-        const fabricTypeId = this.value;
-        if (fabricTypeId) {
-            // Отправляем AJAX-запрос для получения видов ткани
-            fetch(`/get_fabric_views/${fabricTypeId}/?current_view_id=${currentViewId}&current_status_id=${currentStatusId}`)
-            .then(response => response.json())
-            .then(data => {
-                // Обновляем "Вид материала"
-                fabricViewSelect.innerHTML = ''; // Очистить существующие опции
-                data.views.forEach(function (fabricView) {
-                    const option = document.createElement('option');
-                    option.value = fabricView.id;
-                    option.textContent = fabricView.name;
-                    fabricViewSelect.appendChild(option);
-                    
-                    // Устанавливаем текущий вид, если он совпадает с переданным
-                    if (isFirstLoad && fabricView.id == data.current_view_id) {
-                        option.selected = true;
-                    }
-                });
 
-                // Обновляем "Статус материала"
-                statusSelect.innerHTML = ''; // Очистить существующие опции
-                data.statuses.forEach(function (status) {
-                    const option = document.createElement('option');
-                    option.value = status.id;
-                    option.textContent = status.name;
-                    statusSelect.appendChild(option);
-                    // Устанавливаем текущий статус, если он совпадает с переданным
-                    if (isFirstLoad && (status.id == data.current_status_id.replace(/^"(.+)"$/, '$1'))) {
-                        option.selected = true;
-                    }
-                });
+    async function updateFabricViews() {
+        const fabricTypeId = fabricTypeSelect.value;
+        if (!fabricTypeId) return;
 
-                // Триггер обновления материалов
-                if (fabricViewSelect.value) {
-                    fabricViewSelect.dispatchEvent(new Event('change'));
-                }
-                isFirstLoad = false;
-            });
+        const response = await fetch(`/get_fabric_views/${fabricTypeId}/?current_view_id=${currentViewId}&current_status_id=${currentStatusId}`);
+        const data = await response.json();
+
+        fabricViewSelect.innerHTML = '';
+        data.views.forEach(fabricView => {
+            const option = document.createElement('option');
+            option.value = fabricView.id;
+            option.textContent = fabricView.name;
+            fabricViewSelect.appendChild(option);
+            if (isFirstLoad && fabricView.id == data.current_view_id) {
+                option.selected = true;
+            }
+        });
+
+        statusSelect.innerHTML = '';
+        data.statuses.forEach(status => {
+            const option = document.createElement('option');
+            option.value = status.id;
+            option.textContent = status.name;
+            statusSelect.appendChild(option);
+            if (isFirstLoad && status.id == data.current_status_id.replace(/^"(.+)"$/, '$1')) {
+                option.selected = true;
+            }
+        });
+
+        if (fabricViewSelect.value) {
+            await updateFabricMaterials();
         }
-    });
-
-    fabricViewSelect.addEventListener('change', function () {
-        const fabricViewId = this.value;
-        if (fabricViewId) {
-            // Отправляем AJAX-запрос для получения материалов
-            fetch(`/get_fabric_materials/${fabricViewId}/?current_material_id=${currentMaterialId}`)
-            .then(response => response.json())
-            .then(data => {
-                // Обновляем "Материал"
-                fabricMaterialSelect.innerHTML = ''; // Очистить существующие опции
-                data.materials.forEach(function (material) {
-                    const option = document.createElement('option');
-                    option.value = material.id;
-                    option.textContent = material.name;
-                    fabricMaterialSelect.appendChild(option);
-
-                    // Устанавливаем текущий материал, если он совпадает с переданным
-                    if (isFirstLoad && material.id == data.current_material_id) {
-                        option.selected = true;
-                    }
-                });
-            });
-        }
-    });
-
-    // Если страница уже была загружена с выбранным типом и видом ткани
-    if (fabricTypeSelect.value) {
-        fabricTypeSelect.dispatchEvent(new Event('change'));
     }
+
+    async function updateFabricMaterials() {
+        const fabricViewId = fabricViewSelect.value;
+        if (!fabricViewId) return;
+
+        const response = await fetch(`/get_fabric_materials/${fabricViewId}/?current_material_id=${currentMaterialId}`);
+        const data = await response.json();
+
+        fabricMaterialSelect.innerHTML = '';
+        data.materials.forEach(material => {
+            const option = document.createElement('option');
+            option.value = material.id;
+            option.textContent = material.name;
+            fabricMaterialSelect.appendChild(option);
+            if (isFirstLoad && material.id == data.current_material_id) {
+                option.selected = true;
+            }
+        });
+    }
+
+    fabricTypeSelect.addEventListener('change', async function () {
+        await updateFabricViews();
+        isFirstLoad = false;
+    });
+
+    fabricViewSelect.addEventListener('change', async function () {
+        await updateFabricMaterials();
+    });
+
+    if (fabricTypeSelect.value) {
+        await updateFabricViews();
+    }
+    isFirstLoad = false;
 });

@@ -47,22 +47,16 @@ class FabricFilterForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        print("self.data:", self.data)
-        print("self.initial:", self.initial)
-
-        selected_types = self.data.getlist('fabric_types') if 'fabric_types' in self.data else self.initial.get('fabric_types', [])
-        print("Selected types:", selected_types)
         
         # Обработка типов материала
         selected_types = self.data.getlist('fabric_types') if self.data else self.initial.get('fabric_types', [])
         if selected_types:
-            self.fields['fabric_views'].queryset = FabricView.objects.filter(fabric_type__id__in=selected_types)
+            self.fields['fabric_views'].queryset = FabricView.objects.filter(fabric_type__id__in=selected_types).distinct()
 
         # Обработка видов материала
         selected_views = self.data.getlist('fabric_views') if self.data else self.initial.get('fabric_views', [])
         if selected_views:
-            self.fields['fabric_materials'].queryset = FabricMaterial.objects.filter(fabric_view__id__in=selected_views)
+            self.fields['fabric_materials'].queryset = FabricMaterial.objects.filter(fabric_view__id__in=selected_views).distinct()
         
         # Установка выбранных значений для материалов
         selected_materials = self.data.getlist('fabric_materials') if self.data else self.initial.get('fabric_materials', [])
@@ -74,10 +68,12 @@ class FabricFilterForm(forms.Form):
 class FabricEditForm(forms.ModelForm):
     class Meta:
         model = Fabric
-        fields = ['fabric_type', 'status', 'area', 'fabric_view']
+        fields = ['fabric_type', 'status', 'area', 'fabric_view', 'fabric_material']
         widgets = {
             'fabric_type': forms.Select(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
+            'fabric_view': forms.Select(attrs={'class': 'form-control'}),
+            'fabric_material': forms.Select(attrs={'class': 'form-control'}), 
         }
     
 

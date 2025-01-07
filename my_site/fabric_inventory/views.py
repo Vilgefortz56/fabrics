@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 from typing import Any
 
+from django.db.models import Q
 from django.utils import timezone
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import logout
@@ -26,8 +27,6 @@ def add_fabric_page(request):
     fabric_types = FabricType.objects.all()
     fabric_views = FabricView.objects.all()
     fabric_materials = FabricMaterial.objects.all()
-
-    # Формируем словарь для передачи в JSON
     fabric_data = {
         fabric_type.id: {
             'views': {
@@ -75,7 +74,6 @@ def get_fabric_materials(request, fabric_view_id):
         'materials': materials_data,
         'current_material_id': current_material_id,
     }
-    
     return JsonResponse(data, safe=False)
 
 @csrf_exempt
@@ -86,9 +84,7 @@ def get_fabric_views_ajax(request):
         data = {}
         for fabric_type in FabricType.objects.filter(id__in=fabric_type_ids):
             views_data = FabricView.objects.filter(fabric_type__name=fabric_type.name)
-            # Добавляем каждый тип ткани в словарь, где ключ - это название типа, а значение - список видов
             data[fabric_type.name] = list(views_data.values('id', 'name'))
-        print((data))
         return JsonResponse({"views": data})
 
     return JsonResponse({"views": []})
@@ -109,12 +105,10 @@ def get_fabric_materials_ajax(request):
     return JsonResponse({"materials": []})
 
 
-
-
 class FabricDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk, *args, **kwargs):
         fabric = get_object_or_404(Fabric, pk=pk)
-        fabric.delete()  # Это вызовет переопределённый метод delete
+        fabric.delete() 
         return redirect(reverse('fabric_inventory:home'))
 
 
@@ -135,24 +129,20 @@ class FabricEditView(LoginRequiredMixin, UpdateView):
         canvas_data = form.data['canvas_data'] 
         edit_image = form.data['edit_image'] 
         image_path = instance.image.path
-        # Отделяем метаданные base64 и декодируем изображение
         frmt, imgstr = edit_image.split(';base64,')  
         img_data = ContentFile(base64.b64decode(imgstr))
         os.makedirs(os.path.dirname(image_path), exist_ok=True)
-        # Открываем файл для записи в бинарном режиме, создавая его, если он не существует
         with open(image_path, 'wb') as f:
             f.write(img_data.read())
         instance.save()
         if canvas_data:
-            # Сохраняем данные canvas в поле модели
             form.instance.canvas_data = canvas_data
         self.request.session['image_update_time'] = timezone.now().timestamp()
         return super().form_valid(form)
     
-    # Переопределяем метод для получения объекта по pk
     def get_object(self):
-        pk = self.kwargs.get('pk')  # Получаем pk из URL
-        return get_object_or_404(Fabric, pk=pk)  # Возвращаем объект или 404
+        pk = self.kwargs.get('pk')  
+        return get_object_or_404(Fabric, pk=pk)  
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -169,35 +159,47 @@ class FabricsHome(ListView):
     def get_queryset(self):
         queryset = Fabric.objects.all()
         form = self.get_filter_form()
-        
+
         if form.is_valid():
-            # Фильтрация по статусу
+            base_filter = Q()
             status = form.cleaned_data.get('status')
             if status:
-                queryset = queryset.filter(status=status)
-            
-            # Фильтрация по типу ткани
+                base_filter &= Q(status=status)
             fabric_types = form.cleaned_data.get('fabric_types')
-            if fabric_types:
-                queryset = queryset.filter(fabric_type__in=fabric_types)
-            
-            # Фильтрация по виду ткани
             fabric_views = form.cleaned_data.get('fabric_views')
-            if fabric_views:
-                queryset = queryset.filter(fabric_view__in=fabric_views)
-
             fabric_materials = form.cleaned_data.get('fabric_materials')
-            if fabric_materials:
-                queryset = queryset.filter(fabric_material__in=fabric_materials)
 
-        self.queryset = queryset
+            if fabric_types:
+                type_filter = Q()
+                for fabric_type in fabric_types:
+                    type_condition = Q(fabric_type=fabric_type)
+                    related_views = [view for view in fabric_views if view.fabric_type == fabric_type] if fabric_views else []
+                    if related_views:
+                        type_condition &= Q(fabric_view__in=related_views)
+
+                    related_materials = [
+                        material for material in fabric_materials
+                        if material.fabric_view and material.fabric_view.fabric_type == fabric_type
+                    ] if fabric_materials else []
+                    if related_materials:
+                        type_condition &= Q(fabric_material__in=related_materials)
+
+                    type_filter |= type_condition
+
+                base_filter &= type_filter
+            elif fabric_views or fabric_materials:
+                if fabric_views:
+                    base_filter &= Q(fabric_view__in=fabric_views)
+                if fabric_materials:
+                    base_filter &= Q(fabric_material__in=fabric_materials)
+            queryset = queryset.filter(base_filter)
+
         return queryset
 
     def get_paginate_by(self, queryset):
-        # Получаем значение параметра per_page из запроса
         try:
-            per_page = self.request.GET.get('per_page', 20)  # Значение по умолчанию 6
-            return int(per_page)  # Преобразуем в int
+            per_page = self.request.GET.get('per_page', 20)  
+            return int(per_page)  
         except TypeError and ValueError:
             per_page = 20
             return int(per_page)
@@ -211,12 +213,10 @@ class FabricsHome(ListView):
 
         form = self.get_filter_form()
         
-        # Получаем выбранные типы и виды для передачи в шаблон
         selected_fabric_types = form.data.getlist('fabric_types')
         selected_fabric_views = form.data.getlist('fabric_views')
         selected_fabric_materials = form.data.getlist('fabric_materials')
 
-        # Создаем структуру для отображения подписей
         views_by_type = {}
         for fabric_type in FabricType.objects.filter(id__in=selected_fabric_types):
             views_data = FabricView.objects.filter(fabric_type=fabric_type)
@@ -248,10 +248,9 @@ class LoginUser(LoginView):
     extra_context = {'title': "Авторизация"}
 
     def form_valid(self, form):
-        # Стандартный логин
+
         remember_me = self.request.POST.get('remember_me')
 
-        # Если "Запомнить меня" не выбрано, устанавливаем сессию до закрытия браузера
         if not remember_me:
             self.request.session.set_expiry(0) 
         else:
@@ -271,12 +270,11 @@ class CustomLogoutView(LogoutView):
 @csrf_exempt
 def upload_fabric_image(request):
     if request.user.is_authenticated:
-        user = request.user  # Авторизованный пользователь
+        user = request.user  
         body_unicode = request.body.decode('utf-8')
         body_data = json.loads(body_unicode)
 
-        # Получаем заголовок, изображение и другие данные из запроса
-        image_base64 = body_data.get('image')  # Здесь передается base64 изображение
+        image_base64 = body_data.get('image')  
         area = body_data.get('area')
         status = body_data.get('status')
         fabrictype_id = int(body_data.get('fabrictype_id'))
@@ -319,13 +317,11 @@ def upload_fabric_image(request):
 def save_canvas_data(request):
     if request.method == "POST":
         try:
-            # Загружаем JSON из тела запроса
             data = json.loads(request.body)
             canvas_data = data.get("canvas_data")
             pk = data.get("pk")
-            # Найдите нужный объект Fabric и сохраните canvas_data
+            
             fabric = Fabric.objects.get(pk=pk)
-            print(fabric.pk)
             fabric.canvas_data = canvas_data
             fabric.save()
 

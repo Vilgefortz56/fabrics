@@ -60,21 +60,16 @@
                     </select>
                 </div>
 
-                <!-- Площадь -->
-                <div class="col-md-3">
-                    <label for="area_kek" class="form-label">Площадь (кв. м.):</label>
-                    <input type="number" name="area" id="inputArea" class="form-control" step="any" value="">
-                </div>
             </div>
             <div class="row">
-                {{form.fabric_material.field.choices}}
                 <div class="col-md-6">
                     <div class="toolbar d-flex justify-content-start mb-3 mt-2">
                         {% include 'fabric_inventory/edit_menu.html' %}
                     </div>
                 </div>
-                <div class="col-md-3 mt-3">
-                    <button type="submit" class="btn btn-secondary h-50">Сохранить</button>
+                <div class="col-md-3 mt-2">
+                    <label for="area_kek" class="form-label">Площадь (кв. м.):</label>
+                    <input type="number" name="area" id="inputArea" class="form-control" step="any" value="">
                 </div>
             </div>
             
@@ -83,6 +78,7 @@
         {{ fabric.canvas_data|json_script:"canvas-data" }}
         {{ fabric.area|json_script:"area-data" }}
         {{ fabric.fabric_view_id|json_script:"viewid-data" }}
+        {{ fabric.fabric_material_id|json_script:"materialid-data" }}
         {{ fabric.status|json_script:"status-data" }}
         <div class="mb-3 mt-3">
             <div id="canvasContainer" class="" width="1300" height="750"></div>
@@ -93,11 +89,10 @@
 <script src="{% static 'fabric_inventory/js/edit_load.js' %}"> </script>
 
 <script>
-    // Задержка подгрузки второго скрипта
     setTimeout(function() {
         var script = document.createElement('script');
         script.src = "{% static 'fabric_inventory/js/min/edit_drawing.min.js' %}";
         document.body.appendChild(script);
-    }, 150); // Задержка в 3 секунды
+    }, 150);
 </script>
 {% endblock %}
